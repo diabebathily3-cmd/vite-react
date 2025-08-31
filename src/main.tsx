@@ -1,8 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from './pages/Home'
-import Shop from './pages/Shop'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Home from './Pages/Home'
+import Shop from './Pages/Shop'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
