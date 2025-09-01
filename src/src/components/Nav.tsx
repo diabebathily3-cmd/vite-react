@@ -15,13 +15,10 @@ export default function Nav() {
 
   return (
     <nav style={{ padding: "15px", borderBottom: "1px solid #ccc", textAlign: "center" }}>
-      <NavLink to="/" style={linkStyle}>
+      <NavLink to="/" style={({ isActive }) => (isActive ? { ...linkStyle, ...activeStyle } : linkStyle)}>
         Accueil
       </NavLink>
-      <NavLink
-        to="/boutique"
-        style={({ isActive }) => (isActive ? { ...linkStyle, ...activeStyle } : linkStyle)}
-      >
+      <NavLink to="/boutique" style={({ isActive }) => (isActive ? { ...linkStyle, ...activeStyle } : linkStyle)}>
         Boutique
       </NavLink>
     </nav>
