@@ -17,10 +17,10 @@ export default function Nav() {
   return (
     <nav style={{ textAlign: "center", margin: "20px" }}>
       <NavLink to="/" style={({ isActive }) => (isActive ? { ...linkStyle, ...activeStyle } : linkStyle)}>
-        Accueil
+        Home
       </NavLink>
       <NavLink to="/shop" style={({ isActive }) => (isActive ? { ...linkStyle, ...activeStyle } : linkStyle)}>
-        Boutique
+        Shop
       </NavLink>
     </nav>
   );
