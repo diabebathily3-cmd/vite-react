@@ -5,6 +5,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'dist' // Vercel sert ce dossier
+    outDir: 'dist', // dossier que Vercel doit servir
+    sourcemap: true // optionnel, utile pour déboguer
+  },
+  server: {
+    port: 5173, // port local par défaut
+    open: true  // ouvre le navigateur automatiquement
   }
 })
