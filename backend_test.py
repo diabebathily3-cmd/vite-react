@@ -209,6 +209,168 @@ class ProgetAlimentationAPITester:
             expected_keys=["message"]
         )
 
+    def test_create_order_with_orange_money(self):
+        """Test creating an order with Orange Money payment"""
+        # First get a product
+        success, products_response = self.test_get_products()
+        if not success or not products_response or len(products_response) == 0:
+            self.log_result("Create Order with Orange Money", False, "No products available")
+            return False, {}
+        
+        product = products_response[0]
+        order_data = {
+            "customer_name": f"Orange Test {datetime.now().strftime('%H%M%S')}",
+            "customer_phone": "+22390123456",
+            "customer_email": "orange@test.com", 
+            "customer_address": "Bamako, Mali - Orange Money Test",
+            "payment_method": "orange_money",
+            "items": [{
+                "product_id": product["id"],
+                "product_name": product["name"],
+                "quantity": 1,
+                "price_euro": product["price_euro"],
+                "price_cfa": product["price_cfa"]
+            }]
+        }
+        
+        return self.run_test(
+            "Create Order with Orange Money",
+            "POST",
+            "orders",
+            200,
+            data=order_data,
+            expected_keys=["id", "customer_name", "payment_method", "status"]
+        )
+
+    def test_create_order_with_wave(self):
+        """Test creating an order with Wave payment"""
+        # First get a product
+        success, products_response = self.test_get_products()
+        if not success or not products_response or len(products_response) == 0:
+            self.log_result("Create Order with Wave", False, "No products available")
+            return False, {}
+        
+        product = products_response[0]
+        order_data = {
+            "customer_name": f"Wave Test {datetime.now().strftime('%H%M%S')}",
+            "customer_phone": "+22391234567",
+            "customer_email": "wave@test.com",
+            "customer_address": "Bamako, Mali - Wave Test", 
+            "payment_method": "wave",
+            "items": [{
+                "product_id": product["id"],
+                "product_name": product["name"],
+                "quantity": 1,
+                "price_euro": product["price_euro"],
+                "price_cfa": product["price_cfa"]
+            }]
+        }
+        
+        return self.run_test(
+            "Create Order with Wave",
+            "POST",
+            "orders",
+            200,
+            data=order_data,
+            expected_keys=["id", "customer_name", "payment_method", "status"]
+        )
+
+    def test_payment_init_orange_money(self):
+        """Test initializing Orange Money payment"""
+        # Create order first
+        success, order_response = self.test_create_order_with_orange_money()
+        if not success or not order_response:
+            self.log_result("Payment Init Orange Money", False, "Failed to create test order")
+            return False, {}
+        
+        order_id = order_response["id"]
+        payment_data = {
+            "order_id": order_id,
+            "payment_method": "orange_money",
+            "phone_number": "+22390123456"
+        }
+        
+        return self.run_test(
+            "Payment Init Orange Money",
+            "POST",
+            "payments/init",
+            200,
+            data=payment_data,
+            expected_keys=["provider", "merchant_id", "order_id", "amount", "currency", "phone_number", "ussd_code", "instructions"]
+        )
+
+    def test_payment_init_wave(self):
+        """Test initializing Wave payment"""
+        # Create order first
+        success, order_response = self.test_create_order_with_wave()
+        if not success or not order_response:
+            self.log_result("Payment Init Wave", False, "Failed to create test order")
+            return False, {}
+        
+        order_id = order_response["id"]
+        payment_data = {
+            "order_id": order_id,
+            "payment_method": "wave",
+            "phone_number": "+22391234567"
+        }
+        
+        return self.run_test(
+            "Payment Init Wave",
+            "POST", 
+            "payments/init",
+            200,
+            data=payment_data,
+            expected_keys=["provider", "merchant_id", "order_id", "amount", "currency", "phone_number", "instructions"]
+        )
+
+    def test_payment_simulate(self):
+        """Test payment simulation"""
+        # Create order with Orange Money first
+        success, order_response = self.test_create_order_with_orange_money()
+        if not success or not order_response:
+            self.log_result("Payment Simulate", False, "Failed to create test order")
+            return False, {}
+        
+        order_id = order_response["id"]
+        
+        return self.run_test(
+            "Payment Simulate",
+            "POST",
+            f"payments/simulate/{order_id}",
+            200,
+            expected_keys=["message", "transaction_id", "order_id", "status"]
+        )
+
+    def test_payment_status(self):
+        """Test payment status check"""
+        # Create order and simulate payment first
+        success, order_response = self.test_create_order_with_orange_money()
+        if not success or not order_response:
+            self.log_result("Payment Status", False, "Failed to create test order")
+            return False, {}
+        
+        order_id = order_response["id"]
+        
+        # Simulate payment first
+        simulate_success, _ = self.run_test(
+            "Payment Status - Simulate First",
+            "POST",
+            f"payments/simulate/{order_id}",
+            200
+        )
+        
+        if simulate_success:
+            return self.run_test(
+                "Payment Status Check",
+                "GET",
+                f"payments/status/{order_id}",
+                200,
+                expected_keys=["order_id", "payment_method", "payment_status", "amount_cfa", "order_status"]
+            )
+        else:
+            self.log_result("Payment Status", False, "Failed to simulate payment first")
+            return False, {}
+
     def run_all_tests(self):
         """Run all API tests"""
         print("=" * 60)
