@@ -23,7 +23,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app
-app = FastAPI(title="PROGET ALIMENTATION API")
+app = FastAPI(title="Groupe BT Alimentaire API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -199,7 +199,7 @@ def deserialize_doc(doc: dict) -> dict:
 # Root endpoint
 @api_router.get("/")
 async def root():
-    return {"message": "Bienvenue sur PROGET ALIMENTATION API", "version": "1.0.0"}
+    return {"message": "Bienvenue sur Groupe BT Alimentaire API", "version": "1.0.0"}
 
 # ===================== PRODUCTS =====================
 

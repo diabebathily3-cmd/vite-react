@@ -16,7 +16,7 @@ const API = `${BACKEND_URL}/api`;
 // Translations
 const translations = {
   fr: {
-    brand: "PROGET ALIMENTATION",
+    brand: "Groupe BT Alimentaire",
     tagline: "Qualité - Bons prix - Disponibilité immédiate",
     home: "Accueil",
     products: "Produits",
@@ -109,7 +109,7 @@ const translations = {
     selectPayment: "Choisissez votre mode de paiement"
   },
   bm: {
-    brand: "PROGET ALIMENTATION",
+    brand: "Groupe BT Alimentaire",
     tagline: "Ɲumanya - Sɔngɔ ɲuman - A bɛ sɔrɔ yɔrɔnin na",
     home: "So",
     products: "Fɛnw",
@@ -1763,7 +1763,7 @@ const Footer = () => {
         </div>
         <div className="mali-flag-strip mt-8 rounded-full"></div>
         <p className="text-center text-stone-500 mt-4 text-sm">
-          © 2026 PROGET ALIMENTATION. Tous droits réservés.
+          © 2026 Groupe BT Alimentaire. Tous droits réservés.
         </p>
       </div>
     </footer>
