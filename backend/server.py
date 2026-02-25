@@ -125,6 +125,9 @@ class Order(BaseModel):
     total_euro: float
     total_cfa: int
     status: OrderStatus = OrderStatus.PENDING
+    payment_method: PaymentMethod = PaymentMethod.CASH
+    payment_status: PaymentStatus = PaymentStatus.PENDING
+    payment_reference: Optional[str] = None
     notes: Optional[str] = None
     is_wholesale: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -136,8 +139,20 @@ class OrderCreate(BaseModel):
     customer_email: Optional[str] = None
     customer_address: str
     items: List[OrderItem]
+    payment_method: PaymentMethod = PaymentMethod.CASH
     notes: Optional[str] = None
     is_wholesale: bool = False
+
+class PaymentInitRequest(BaseModel):
+    order_id: str
+    payment_method: PaymentMethod
+    phone_number: str
+
+class PaymentCallbackRequest(BaseModel):
+    order_id: str
+    transaction_id: str
+    status: str
+    payment_method: str
 
 class Contact(BaseModel):
     model_config = ConfigDict(extra="ignore")
