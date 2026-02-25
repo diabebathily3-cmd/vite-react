@@ -6,7 +6,8 @@ import {
   ShoppingCart, Phone, MessageCircle, Package, ChevronRight, 
   Menu, X, Plus, Minus, Trash2, Send, MapPin, Clock, Truck,
   LayoutDashboard, PackageSearch, ClipboardList, Mail, LogOut,
-  Edit, Check, AlertCircle, TrendingUp, Users, Star, Filter
+  Edit, Check, AlertCircle, TrendingUp, Users, Star, Filter,
+  RefreshCw, Smartphone, Banknote, CreditCard, Wallet
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
