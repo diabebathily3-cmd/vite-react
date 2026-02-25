@@ -94,7 +94,18 @@ const translations = {
     wholesaleNote: "Prix spéciaux pour commandes en gros",
     orderSuccess: "Votre commande a été enregistrée avec succès !",
     contactSuccess: "Votre message a été envoyé avec succès !",
-    searchProducts: "Rechercher un produit..."
+    searchProducts: "Rechercher un produit...",
+    paymentMethod: "Méthode de paiement",
+    cash: "Paiement à la livraison",
+    orangeMoney: "Orange Money",
+    wave: "Wave",
+    payNow: "Payer maintenant",
+    awaitingPayment: "En attente de paiement",
+    paid: "Payé",
+    paymentInstructions: "Instructions de paiement",
+    simulatePayment: "Simuler le paiement (démo)",
+    paymentSuccess: "Paiement effectué avec succès !",
+    selectPayment: "Choisissez votre mode de paiement"
   },
   bm: {
     brand: "PROGET ALIMENTATION",
