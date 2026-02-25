@@ -1,0 +1,17 @@
+# Robots.txt pour Groupe BT Alimentaire
+# https://groupebt-alimentaire.com
+
+User-agent: *
+Allow: /
+Allow: /products
+Allow: /contact
+
+# Bloquer les pages admin et checkout pour les robots
+Disallow: /admin
+Disallow: /checkout
+
+# Sitemap
+Sitemap: https://groupebt-alimentaire.com/sitemap.xml
+
+# Crawl-delay pour être gentil avec les serveurs
+Crawl-delay: 10
