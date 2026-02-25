@@ -1,0 +1,174 @@
+{
+  "identity": {
+    "name": "PROGET ALIMENTATION",
+    "mission": "Bringing the authentic taste of Mali to every table.",
+    "values": ["Authenticity", "Freshness", "Community", "Vibrancy"],
+    "brand_voice": "Energetic, Warm, Trustworthy, Direct"
+  },
+  "design_system": {
+    "colors": {
+      "palette": {
+        "primary": {
+          "DEFAULT": "#14B53A",
+          "foreground": "#FFFFFF",
+          "description": "Mali Green - Use for primary actions, success states, and brand identity."
+        },
+        "secondary": {
+          "DEFAULT": "#FCD116",
+          "foreground": "#1C1917",
+          "description": "Mali Yellow - Use for highlights, stars, accents, and 'fresh' indicators."
+        },
+        "destructive": {
+          "DEFAULT": "#CE1126",
+          "foreground": "#FFFFFF",
+          "description": "Mali Red - Use for 'Heat/Fire' effects, discounts, urgency, and delete actions."
+        },
+        "background": {
+          "DEFAULT": "#FAFAF9",
+          "dark": "#0C0A09",
+          "description": "Warm Stone White - Avoid pure white to maintain an organic feel."
+        },
+        "card": {
+          "DEFAULT": "#FFFFFF",
+          "foreground": "#1C1917"
+        },
+        "muted": {
+          "DEFAULT": "#F5F5F4",
+          "foreground": "#78716C"
+        }
+      },
+      "gradients": {
+        "fire": "linear-gradient(135deg, #FCD116 0%, #CE1126 100%)",
+        "lush": "linear-gradient(135deg, #14B53A 0%, #065F46 100%)"
+      }
+    },
+    "typography": {
+      "headings": {
+        "family": "Outfit, sans-serif",
+        "weights": ["700", "900"],
+        "description": "Bold, modern, and friendly. Use for all major headers."
+      },
+      "body": {
+        "family": "Plus Jakarta Sans, sans-serif",
+        "weights": ["400", "500", "600"],
+        "description": "Highly readable, geometric but human."
+      },
+      "accent": {
+        "family": "Bebas Neue, display",
+        "description": "Use sparingly for 'FLYER STYLE' big promo text (e.g., 'PROMO', '-50%')."
+      }
+    },
+    "radius": {
+      "default": "0.75rem",
+      "sm": "0.5rem",
+      "lg": "1rem",
+      "full": "9999px"
+    },
+    "shadows": {
+      "card": "0 2px 8px -2px rgba(20, 181, 58, 0.1), 0 1px 4px -2px rgba(0, 0, 0, 0.05)",
+      "hover": "0 10px 25px -5px rgba(20, 181, 58, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+      "fire": "0 4px 14px 0 rgba(206, 17, 38, 0.39)"
+    }
+  },
+  "layout_strategies": {
+    "marketing_store": {
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "grid_style": "Bento Grid",
+      "spacing_scale": "Relaxed (p-6, p-8, p-12)",
+      "rules": [
+        "Use 'Fire Gradient' for Hero backgrounds or Promo banners.",
+        "Product cards must use white background with subtle shadow.",
+        "Category headers should be bold and centered."
+      ]
+    },
+    "admin_dashboard": {
+      "container": "w-full px-6 py-4",
+      "grid_style": "High Density",
+      "spacing_scale": "Compact (p-2, p-4)",
+      "rules": [
+        "Use tables for stock management.",
+        "Use muted backgrounds for sidebars.",
+        "Status badges: Green (In Stock), Red (Low Stock/Out), Yellow (Pending)."
+      ]
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#14B53A] hover:bg-[#109630] text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300",
+      "secondary": "bg-[#FCD116] hover:bg-[#E3BC10] text-stone-900 font-bold rounded-full",
+      "fire": "bg-gradient-to-r from-orange-500 to-red-600 text-white font-black uppercase tracking-widest shadow-fire hover:scale-105 transition-transform"
+    },
+    "cards": {
+      "product": "bg-white border border-stone-100 rounded-2xl overflow-hidden hover:shadow-hover transition-shadow duration-300 group",
+      "feature": "bg-stone-50 border-none rounded-xl p-6 hover:bg-white transition-colors"
+    },
+    "badges": {
+      "discount": "bg-[#CE1126] text-white font-black skew-x-[-10deg] shadow-sm",
+      "new": "bg-[#14B53A] text-white font-bold rounded-full"
+    }
+  },
+  "assets": {
+    "product_images": [
+      {
+        "category": "Rice",
+        "url": "https://images.unsplash.com/photo-1714070707310-b3737ff0a0fb?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Sack of Royal Rice"
+      },
+      {
+        "category": "Rice",
+        "url": "https://images.unsplash.com/photo-1633536706496-873ce0d46277?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Stacked Rice Bags"
+      },
+      {
+        "category": "Oil",
+        "url": "https://images.unsplash.com/photo-1758958437294-345e16aec47c?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Large Cooking Oil Container"
+      },
+      {
+        "category": "Oil",
+        "url": "https://images.pexels.com/photos/31321713/pexels-photo-31321713.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "alt": "Soy Bean Oil Bottle"
+      },
+      {
+        "category": "Milk",
+        "url": "https://images.pexels.com/photos/11501481/pexels-photo-11501481.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "alt": "Powdered Milk Tin"
+      },
+      {
+        "category": "Pasta",
+        "url": "https://images.unsplash.com/photo-1762926627752-37e9b6b42a26?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Pasta Packages on Shelf"
+      },
+      {
+        "category": "General",
+        "url": "https://images.unsplash.com/photo-1719532520316-4cc0d8886ab7?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Shopping Cart with Groceries"
+      }
+    ],
+    "placeholders": {
+      "logo": "https://via.placeholder.com/150x50?text=PROGET+ALIMENTATION",
+      "user": "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+    }
+  },
+  "visual_enhancers": {
+    "fire_effect": "Use a subtle bottom border gradient or background gradient on 'Hot' sections using the 'fire' gradient defined in colors.",
+    "textures": "Add a very subtle noise texture opacity-5 on the main background to give it a paper/flyer feel.",
+    "icons": "Use 'Lucide React' icons. For food specific icons, try to find the closest match or use generic shapes."
+  },
+  "universal_guidelines": [
+    "Always use the 'data-testid' attribute for interactive elements.",
+    "Do NOT use pure black (#000000). Use #1C1917 or #0C0A09.",
+    "Ensure all text over images has a 'bg-black/40' overlay or sufficient text shadow.",
+    "Buttons must have a distinct hover state.",
+    "Forms must use Shadcn components (Input, Select, Form).",
+    "Mobile responsiveness is PRIORITY 1. Check everything at 375px width."
+  ],
+  "implementation_steps": [
+    "Step 1: Update 'tailwind.config.js' with the new color palette (primary, secondary, destructive, accent).",
+    "Step 2: Install necessary fonts (Outfit, Plus Jakarta Sans, Bebas Neue) via Google Fonts in 'index.css'.",
+    "Step 3: Create a 'Layout' component that handles the Navbar (with Mali flag strip top border) and Footer.",
+    "Step 4: Build the 'ProductCard' component with the image, price (Euro/CFA), and 'Add to Cart' button.",
+    "Step 5: Build the 'Hero' section with the 'Fire' gradient and bold typography.",
+    "Step 6: Implement the Admin Dashboard using a Sidebar layout and Data Tables."
+  ]
+}
