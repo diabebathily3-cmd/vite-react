@@ -315,7 +315,7 @@ async def update_order_status(order_id: str, status: OrderStatus):
 
 # Orange Money Configuration (Mali)
 ORANGE_MONEY_CONFIG = {
-    "merchant_id": os.environ.get("ORANGE_MONEY_MERCHANT_ID", "PROGET_ALIMENTATION_ML"),
+    "merchant_id": os.environ.get("ORANGE_MONEY_MERCHANT_ID", "GROUPE_BT_ALIMENTAIRE_ML"),
     "api_key": os.environ.get("ORANGE_MONEY_API_KEY", ""),
     "secret_key": os.environ.get("ORANGE_MONEY_SECRET_KEY", ""),
     "sandbox": os.environ.get("ORANGE_MONEY_SANDBOX", "true") == "true",
@@ -325,7 +325,7 @@ ORANGE_MONEY_CONFIG = {
 
 # Wave Configuration (Mali/Senegal)
 WAVE_CONFIG = {
-    "merchant_id": os.environ.get("WAVE_MERCHANT_ID", "PROGET_ALIMENTATION"),
+    "merchant_id": os.environ.get("WAVE_MERCHANT_ID", "GROUPE_BT_ALIMENTAIRE"),
     "client_id": os.environ.get("WAVE_CLIENT_ID", ""),
     "client_secret": os.environ.get("WAVE_CLIENT_SECRET", ""),
     "sandbox": os.environ.get("WAVE_SANDBOX", "true") == "true",
