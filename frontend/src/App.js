@@ -924,21 +924,25 @@ const ContactPage = () => {
 
 // Checkout Page
 const CheckoutPage = () => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { cart, totalEuro, totalCfa, clearCart } = useCart();
   const navigate = useNavigate();
+  const [step, setStep] = useState(1); // 1: info, 2: payment, 3: confirmation
   const [form, setForm] = useState({ 
     customer_name: '', 
     customer_phone: '', 
     customer_email: '', 
     customer_address: '', 
     notes: '',
-    is_wholesale: false 
+    is_wholesale: false,
+    payment_method: 'cash'
   });
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [orderId, setOrderId] = useState(null);
+  const [paymentData, setPaymentData] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
 
-  const handleSubmit = async (e) => {
+  const handleSubmitInfo = async (e) => {
     e.preventDefault();
     if (cart.length === 0) return;
 
@@ -954,10 +958,23 @@ const CheckoutPage = () => {
           price_cfa: item.price_cfa
         }))
       };
-      await axios.post(`${API}/orders`, orderData);
-      setSuccess(true);
-      clearCart();
-      setTimeout(() => navigate('/'), 3000);
+      const res = await axios.post(`${API}/orders`, orderData);
+      setOrderId(res.data.id);
+      
+      if (form.payment_method === 'cash') {
+        // Direct to success for cash payment
+        clearCart();
+        setStep(3);
+      } else {
+        // Initialize mobile payment
+        const paymentRes = await axios.post(`${API}/payments/init`, {
+          order_id: res.data.id,
+          payment_method: form.payment_method,
+          phone_number: form.customer_phone
+        });
+        setPaymentData(paymentRes.data);
+        setStep(2);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -965,7 +982,37 @@ const CheckoutPage = () => {
     }
   };
 
-  if (success) {
+  const simulatePayment = async () => {
+    if (!orderId) return;
+    setLoading(true);
+    try {
+      await axios.post(`${API}/payments/simulate/${orderId}`);
+      setPaymentStatus('success');
+      clearCart();
+      setTimeout(() => setStep(3), 1500);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkPaymentStatus = async () => {
+    if (!orderId) return;
+    try {
+      const res = await axios.get(`${API}/payments/status/${orderId}`);
+      if (res.data.payment_status === 'success') {
+        setPaymentStatus('success');
+        clearCart();
+        setTimeout(() => setStep(3), 1500);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Step 3: Success
+  if (step === 3) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4" data-testid="order-success">
         <div className="bg-white rounded-3xl p-8 text-center max-w-md shadow-lg animate-fade-in-up">
@@ -973,7 +1020,10 @@ const CheckoutPage = () => {
             <Check className="w-10 h-10 text-[#14B53A]" />
           </div>
           <h2 className="text-2xl font-bold text-stone-900 mb-4">{t('orderPlaced')}</h2>
-          <p className="text-stone-600 mb-6">{t('orderSuccess')}</p>
+          <p className="text-stone-600 mb-2">{t('orderSuccess')}</p>
+          {form.payment_method !== 'cash' && (
+            <p className="text-[#14B53A] font-semibold mb-4">{t('paymentSuccess')}</p>
+          )}
           <Link to="/" className="btn-primary inline-flex items-center gap-2">
             {t('continueShopping')} <ChevronRight className="w-5 h-5" />
           </Link>
@@ -982,7 +1032,7 @@ const CheckoutPage = () => {
     );
   }
 
-  if (cart.length === 0) {
+  if (cart.length === 0 && step === 1) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
         <div className="text-center">
@@ -996,6 +1046,113 @@ const CheckoutPage = () => {
     );
   }
 
+  // Step 2: Payment
+  if (step === 2 && paymentData) {
+    return (
+      <div className="min-h-screen bg-stone-50 py-8" data-testid="payment-page">
+        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-black text-stone-900 mb-8 text-center">{t('paymentInstructions')}</h1>
+          
+          <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+            {/* Payment Provider Logo */}
+            <div className="flex items-center justify-center gap-4 mb-6">
+              {paymentData.provider === 'orange_money' ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center">
+                    <span className="text-white font-black text-2xl">OM</span>
+                  </div>
+                  <span className="text-2xl font-bold text-orange-500">Orange Money</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 bg-[#1DC9FF] rounded-2xl flex items-center justify-center">
+                    <span className="text-white font-black text-2xl">W</span>
+                  </div>
+                  <span className="text-2xl font-bold text-[#1DC9FF]">Wave</span>
+                </div>
+              )}
+            </div>
+
+            {/* Amount */}
+            <div className="text-center mb-6 p-4 bg-stone-50 rounded-xl">
+              <p className="text-stone-500 text-sm mb-1">{t('total')}</p>
+              <p className="text-4xl font-black text-stone-900">{paymentData.amount.toLocaleString()} F CFA</p>
+            </div>
+
+            {/* Instructions */}
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4 mb-6">
+              <p className="text-stone-700 leading-relaxed">
+                {paymentData.instructions[lang === 'bm' ? 'bm' : 'fr']}
+              </p>
+            </div>
+
+            {/* USSD Code for Orange Money */}
+            {paymentData.provider === 'orange_money' && paymentData.ussd_code && (
+              <div className="bg-orange-100 rounded-xl p-4 mb-6 text-center">
+                <p className="text-sm text-orange-700 mb-2">Code USSD:</p>
+                <p className="text-2xl font-mono font-bold text-orange-600">{paymentData.ussd_code}</p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="space-y-3">
+              {paymentStatus === 'success' ? (
+                <div className="bg-green-100 text-green-700 p-4 rounded-xl flex items-center justify-center gap-2">
+                  <Check className="w-6 h-6" />
+                  <span className="font-semibold">{t('paymentSuccess')}</span>
+                </div>
+              ) : (
+                <>
+                  <button 
+                    onClick={checkPaymentStatus}
+                    data-testid="check-payment-btn"
+                    className="w-full py-3 px-4 bg-stone-100 hover:bg-stone-200 rounded-xl font-semibold text-stone-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-5 h-5" /> Vérifier le paiement
+                  </button>
+                  
+                  {/* Demo: Simulate Payment Button */}
+                  <button 
+                    onClick={simulatePayment}
+                    disabled={loading}
+                    data-testid="simulate-payment-btn"
+                    className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+                      paymentData.provider === 'orange_money' 
+                        ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                        : 'bg-[#1DC9FF] hover:bg-[#15B5E8] text-white'
+                    }`}
+                  >
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>
+                        <Smartphone className="w-5 h-5" /> {t('simulatePayment')}
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Note */}
+            <p className="text-xs text-stone-400 text-center mt-4">
+              Mode démo - En production, le paiement sera validé automatiquement
+            </p>
+          </div>
+
+          {/* Back Button */}
+          <button 
+            onClick={() => setStep(1)}
+            className="w-full py-3 text-stone-500 hover:text-stone-700 transition-colors"
+          >
+            ← Retour aux informations
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 1: Information Form
   return (
     <div className="min-h-screen bg-stone-50 py-8" data-testid="checkout-page">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1005,7 +1162,7 @@ const CheckoutPage = () => {
           {/* Order Form */}
           <div className="bg-white rounded-2xl p-6 shadow-sm">
             <h2 className="text-xl font-bold mb-6">Informations de livraison</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmitInfo} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">{t('name')} *</label>
                 <input 
@@ -1059,6 +1216,91 @@ const CheckoutPage = () => {
                   className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-[#14B53A] focus:ring-2 focus:ring-[#14B53A]/20 outline-none resize-none"
                 />
               </div>
+              
+              {/* Payment Method Selection */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-3">{t('paymentMethod')} *</label>
+                <div className="space-y-3">
+                  {/* Cash */}
+                  <label 
+                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      form.payment_method === 'cash' 
+                        ? 'border-[#14B53A] bg-green-50' 
+                        : 'border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    <input 
+                      type="radio"
+                      name="payment_method"
+                      value="cash"
+                      checked={form.payment_method === 'cash'}
+                      onChange={(e) => setForm({...form, payment_method: e.target.value})}
+                      data-testid="payment-cash"
+                      className="w-5 h-5 text-[#14B53A] focus:ring-[#14B53A]"
+                    />
+                    <div className="w-12 h-12 bg-stone-200 rounded-xl flex items-center justify-center">
+                      <Banknote className="w-6 h-6 text-stone-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-stone-900">{t('cash')}</p>
+                      <p className="text-sm text-stone-500">Payer à la réception</p>
+                    </div>
+                  </label>
+
+                  {/* Orange Money */}
+                  <label 
+                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      form.payment_method === 'orange_money' 
+                        ? 'border-orange-500 bg-orange-50' 
+                        : 'border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    <input 
+                      type="radio"
+                      name="payment_method"
+                      value="orange_money"
+                      checked={form.payment_method === 'orange_money'}
+                      onChange={(e) => setForm({...form, payment_method: e.target.value})}
+                      data-testid="payment-orange"
+                      className="w-5 h-5 text-orange-500 focus:ring-orange-500"
+                    />
+                    <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                      <span className="text-white font-black text-lg">OM</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-stone-900">Orange Money</p>
+                      <p className="text-sm text-stone-500">Paiement mobile Orange</p>
+                    </div>
+                  </label>
+
+                  {/* Wave */}
+                  <label 
+                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      form.payment_method === 'wave' 
+                        ? 'border-[#1DC9FF] bg-cyan-50' 
+                        : 'border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    <input 
+                      type="radio"
+                      name="payment_method"
+                      value="wave"
+                      checked={form.payment_method === 'wave'}
+                      onChange={(e) => setForm({...form, payment_method: e.target.value})}
+                      data-testid="payment-wave"
+                      className="w-5 h-5 text-[#1DC9FF] focus:ring-[#1DC9FF]"
+                    />
+                    <div className="w-12 h-12 bg-[#1DC9FF] rounded-xl flex items-center justify-center">
+                      <span className="text-white font-black text-lg">W</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-stone-900">Wave</p>
+                      <p className="text-sm text-stone-500">Paiement mobile Wave</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div className="flex items-center gap-3 p-4 bg-stone-50 rounded-xl">
                 <input 
                   type="checkbox"
@@ -1082,7 +1324,7 @@ const CheckoutPage = () => {
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    {t('orderNow')} <ChevronRight className="w-5 h-5" />
+                    {form.payment_method === 'cash' ? t('orderNow') : t('payNow')} <ChevronRight className="w-5 h-5" />
                   </>
                 )}
               </button>
