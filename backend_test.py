@@ -390,6 +390,13 @@ class ProgetAlimentationAPITester:
             self.test_get_contacts,
             self.test_create_order,
             self.test_get_orders,
+            # Mobile Payment Tests
+            self.test_create_order_with_orange_money,
+            self.test_create_order_with_wave,
+            self.test_payment_init_orange_money,
+            self.test_payment_init_wave,
+            self.test_payment_simulate,
+            self.test_payment_status,
         ]
         
         for test_method in test_methods:
