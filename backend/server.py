@@ -40,10 +40,24 @@ class ProductCategory(str, Enum):
 
 class OrderStatus(str, Enum):
     PENDING = "pending"
+    AWAITING_PAYMENT = "awaiting_payment"
+    PAID = "paid"
     CONFIRMED = "confirmed"
     PROCESSING = "processing"
     SHIPPED = "shipped"
     DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+
+class PaymentMethod(str, Enum):
+    CASH = "cash"
+    ORANGE_MONEY = "orange_money"
+    WAVE = "wave"
+
+class PaymentStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESS = "success"
+    FAILED = "failed"
     CANCELLED = "cancelled"
 
 # Pydantic Models
