@@ -18,12 +18,14 @@ Application de gestion de stock et commandes pour PROGET ALIMENTATION, une entre
 - Gestion des stocks et prix (admin)
 - Interface bilingue Français/Bambara
 - Design aux couleurs du Mali (vert/jaune/rouge)
+- Paiement mobile Orange Money et Wave
 
 ## Architecture
 - **Frontend**: React 19 + TailwindCSS
 - **Backend**: FastAPI (Python)
 - **Base de données**: MongoDB
 - **Style**: Design moderne "Vibrant Market" avec couleurs Mali
+- **Paiements**: Orange Money + Wave (mode démo)
 
 ## Ce Qui a Été Implémenté
 
@@ -41,6 +43,9 @@ Application de gestion de stock et commandes pour PROGET ALIMENTATION, une entre
 - [x] Admin: gestion des messages
 - [x] Boutons WhatsApp et appel direct
 - [x] Design responsive mobile
+- [x] **Paiement mobile Orange Money** (nouveau)
+- [x] **Paiement mobile Wave** (nouveau)
+- [x] **Page instructions paiement avec USSD** (nouveau)
 
 ### Backend (25/02/2026)
 - [x] API CRUD Produits (/api/products)
@@ -48,6 +53,17 @@ Application de gestion de stock et commandes pour PROGET ALIMENTATION, une entre
 - [x] API CRUD Contacts (/api/contacts)
 - [x] API Dashboard Stats (/api/dashboard/stats)
 - [x] Seed data avec 12 produits initiaux
+- [x] **API /api/payments/init** - Initialiser paiement mobile (nouveau)
+- [x] **API /api/payments/callback** - Webhook paiement (nouveau)
+- [x] **API /api/payments/simulate** - Simulation démo (nouveau)
+- [x] **API /api/payments/status** - Statut paiement (nouveau)
+
+### Méthodes de Paiement
+| Méthode | Statut | Description |
+|---------|--------|-------------|
+| Cash | ✅ Actif | Paiement à la livraison |
+| Orange Money | ✅ Démo | USSD *144*4*1*montant# |
+| Wave | ✅ Démo | Via app Wave |
 
 ### Produits Inclus
 | Produit | Prix € | Prix CFA |
@@ -65,10 +81,11 @@ Application de gestion de stock et commandes pour PROGET ALIMENTATION, une entre
 | Pasta Douma 5kg | 16€ | 11,000 F |
 | Malo Wousu 25kg | 31€ | 20,000 F |
 
-## Résultats des Tests
+## Résultats des Tests (Iteration 2)
 - Backend: 100%
-- Frontend: 95%
+- Frontend: 100%
 - Intégration: 100%
+- Mobile Payments: 100%
 
 ## Backlog Priorisé
 
@@ -76,22 +93,43 @@ Application de gestion de stock et commandes pour PROGET ALIMENTATION, une entre
 - Catalogue produits
 - Panier et commandes
 - Dashboard admin
+- Paiement mobile Orange Money & Wave
 
 ### P1 (Important) - À Faire
 - [ ] Authentification admin sécurisée
 - [ ] Notifications par SMS/Email pour nouvelles commandes
-- [ ] Export des commandes en PDF/Excel
+- [ ] Activation production Orange Money (credentials marchands)
+- [ ] Activation production Wave (credentials marchands)
 
 ### P2 (Souhaité) - À Faire
 - [ ] Historique des commandes client
 - [ ] Système de fidélité/réductions
-- [ ] Intégration paiement mobile (Orange Money, Wave)
+- [ ] QR Code pour paiement Wave
 - [ ] Mode hors ligne pour zones à faible connexion
 
+## Configuration Production (À Obtenir)
+
+### Orange Money Mali
+```
+ORANGE_MONEY_MERCHANT_ID=votre_merchant_id
+ORANGE_MONEY_API_KEY=votre_api_key
+ORANGE_MONEY_SECRET_KEY=votre_secret_key
+ORANGE_MONEY_SANDBOX=false
+```
+
+### Wave Mali
+```
+WAVE_MERCHANT_ID=votre_merchant_id
+WAVE_CLIENT_ID=votre_client_id
+WAVE_CLIENT_SECRET=votre_client_secret
+WAVE_SANDBOX=false
+```
+
 ## Prochaines Actions
-1. Ajouter authentification admin
-2. Intégrer notifications SMS via Twilio pour nouvelles commandes
-3. Ajouter paiement mobile Mali (Orange Money/Wave)
+1. Obtenir credentials marchands Orange Money Mali
+2. Obtenir credentials marchands Wave
+3. Ajouter authentification admin sécurisée
+4. Intégrer notifications SMS pour nouvelles commandes
 
 ## Contacts
 - Téléphone Mali: +223 64 48 75 74
