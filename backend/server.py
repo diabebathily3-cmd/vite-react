@@ -311,6 +311,192 @@ async def update_order_status(order_id: str, status: OrderStatus):
     )
     return {"message": f"Statut mis à jour: {status}"}
 
+# ===================== MOBILE PAYMENTS =====================
+
+# Orange Money Configuration (Mali)
+ORANGE_MONEY_CONFIG = {
+    "merchant_id": os.environ.get("ORANGE_MONEY_MERCHANT_ID", "PROGET_ALIMENTATION_ML"),
+    "api_key": os.environ.get("ORANGE_MONEY_API_KEY", ""),
+    "secret_key": os.environ.get("ORANGE_MONEY_SECRET_KEY", ""),
+    "sandbox": os.environ.get("ORANGE_MONEY_SANDBOX", "true") == "true",
+    "currency": "XOF",
+    "country": "ML"
+}
+
+# Wave Configuration (Mali/Senegal)
+WAVE_CONFIG = {
+    "merchant_id": os.environ.get("WAVE_MERCHANT_ID", "PROGET_ALIMENTATION"),
+    "client_id": os.environ.get("WAVE_CLIENT_ID", ""),
+    "client_secret": os.environ.get("WAVE_CLIENT_SECRET", ""),
+    "sandbox": os.environ.get("WAVE_SANDBOX", "true") == "true",
+    "currency": "XOF"
+}
+
+def generate_orange_money_hash(merchant_id: str, order_id: str, amount: int, timestamp: str, secret_key: str) -> str:
+    """Generate HMAC hash for Orange Money API"""
+    data = f"{merchant_id}{order_id}{amount}{timestamp}"
+    return hmac.new(secret_key.encode(), data.encode(), hashlib.sha256).hexdigest()
+
+def generate_wave_hash(merchant_id: str, order_id: str, amount: int, backend_url: str, timestamp: str, secret_key: str) -> str:
+    """Generate HMAC hash for Wave API"""
+    data = f"{merchant_id}{order_id}{amount}{backend_url}{timestamp}"
+    return hmac.new(secret_key.encode(), data.encode(), hashlib.sha256).hexdigest()
+
+@api_router.post("/payments/init")
+async def init_payment(request: PaymentInitRequest):
+    """Initialize mobile money payment"""
+    # Get order
+    order = await db.orders.find_one({"id": request.order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+    
+    timestamp = str(int(time.time()))
+    amount = order["total_cfa"]
+    
+    if request.payment_method == PaymentMethod.ORANGE_MONEY:
+        # Generate Orange Money payment data
+        hash_value = generate_orange_money_hash(
+            ORANGE_MONEY_CONFIG["merchant_id"],
+            request.order_id,
+            amount,
+            timestamp,
+            ORANGE_MONEY_CONFIG["secret_key"] or "demo_secret_key"
+        )
+        
+        payment_data = {
+            "provider": "orange_money",
+            "merchant_id": ORANGE_MONEY_CONFIG["merchant_id"],
+            "order_id": request.order_id,
+            "amount": amount,
+            "currency": "XOF",
+            "phone_number": request.phone_number,
+            "timestamp": timestamp,
+            "hash": hash_value,
+            "sandbox": ORANGE_MONEY_CONFIG["sandbox"],
+            "ussd_code": f"*144*4*1*{amount}#",
+            "instructions": {
+                "fr": f"Composez *144*4*1*{amount}# sur votre téléphone Orange Money pour payer {amount:,} F CFA",
+                "bm": f"*144*4*1*{amount}# bila i ka Orange Money telefɔni kan ka sara {amount:,} F CFA"
+            }
+        }
+        
+    elif request.payment_method == PaymentMethod.WAVE:
+        # Generate Wave payment data
+        backend_url = os.environ.get("REACT_APP_BACKEND_URL", "https://dietary-pro.preview.emergentagent.com")
+        hash_value = generate_wave_hash(
+            WAVE_CONFIG["merchant_id"],
+            request.order_id,
+            amount,
+            f"{backend_url}/api/payments/callback",
+            timestamp,
+            WAVE_CONFIG["client_secret"] or "demo_secret_key"
+        )
+        
+        payment_data = {
+            "provider": "wave",
+            "merchant_id": WAVE_CONFIG["merchant_id"],
+            "order_id": request.order_id,
+            "amount": amount,
+            "currency": "XOF",
+            "phone_number": request.phone_number,
+            "timestamp": timestamp,
+            "hash": hash_value,
+            "sandbox": WAVE_CONFIG["sandbox"],
+            "instructions": {
+                "fr": f"Ouvrez l'application Wave et envoyez {amount:,} F CFA au numéro marchand ou scannez le QR code",
+                "bm": f"Wave application yɛlɛ ka {amount:,} F CFA ci julakɛla nimɔrɔ ma"
+            }
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Méthode de paiement non supportée")
+    
+    # Update order with payment info
+    await db.orders.update_one(
+        {"id": request.order_id},
+        {"$set": {
+            "payment_method": request.payment_method,
+            "payment_status": PaymentStatus.PROCESSING,
+            "status": OrderStatus.AWAITING_PAYMENT,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return payment_data
+
+@api_router.post("/payments/callback")
+async def payment_callback(request: PaymentCallbackRequest):
+    """Handle payment callback from Orange Money or Wave"""
+    order = await db.orders.find_one({"id": request.order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+    
+    if request.status == "SUCCESS" or request.status == "success":
+        payment_status = PaymentStatus.SUCCESS
+        order_status = OrderStatus.PAID
+    elif request.status == "FAILED" or request.status == "failed":
+        payment_status = PaymentStatus.FAILED
+        order_status = OrderStatus.PENDING
+    elif request.status == "CANCELLED" or request.status == "cancelled":
+        payment_status = PaymentStatus.CANCELLED
+        order_status = OrderStatus.PENDING
+    else:
+        payment_status = PaymentStatus.PROCESSING
+        order_status = OrderStatus.AWAITING_PAYMENT
+    
+    await db.orders.update_one(
+        {"id": request.order_id},
+        {"$set": {
+            "payment_status": payment_status,
+            "payment_reference": request.transaction_id,
+            "status": order_status,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Callback traité", "payment_status": payment_status, "order_status": order_status}
+
+@api_router.post("/payments/simulate/{order_id}")
+async def simulate_payment_success(order_id: str):
+    """Simulate successful payment (for demo/testing)"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+    
+    transaction_id = f"TXN_{uuid.uuid4().hex[:12].upper()}"
+    
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {
+            "payment_status": PaymentStatus.SUCCESS,
+            "payment_reference": transaction_id,
+            "status": OrderStatus.PAID,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "message": "Paiement simulé avec succès",
+        "transaction_id": transaction_id,
+        "order_id": order_id,
+        "status": "PAID"
+    }
+
+@api_router.get("/payments/status/{order_id}")
+async def get_payment_status(order_id: str):
+    """Get payment status for an order"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+    
+    return {
+        "order_id": order_id,
+        "payment_method": order.get("payment_method", "cash"),
+        "payment_status": order.get("payment_status", "pending"),
+        "payment_reference": order.get("payment_reference"),
+        "amount_cfa": order["total_cfa"],
+        "order_status": order["status"]
+    }
+
 # ===================== CONTACTS =====================
 
 @api_router.get("/contacts", response_model=List[Contact])
