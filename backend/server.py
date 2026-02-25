@@ -285,10 +285,14 @@ async def create_order(input: OrderCreate):
     total_euro = sum(item.price_euro * item.quantity for item in input.items)
     total_cfa = sum(item.price_cfa * item.quantity for item in input.items)
     
+    # Set initial status based on payment method
+    initial_status = OrderStatus.AWAITING_PAYMENT if input.payment_method in [PaymentMethod.ORANGE_MONEY, PaymentMethod.WAVE] else OrderStatus.PENDING
+    
     order = Order(
         **input.model_dump(),
         total_euro=round(total_euro, 2),
-        total_cfa=total_cfa
+        total_cfa=total_cfa,
+        status=initial_status
     )
     doc = order.model_dump()
     serialize_doc(doc)
