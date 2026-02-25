@@ -187,7 +187,18 @@ const translations = {
     wholesaleNote: "Sɔngɔ kɛrɛnkɛrɛnnen san caman ye",
     orderSuccess: "I ka san sɛbɛnnen don kojugu !",
     contactSuccess: "I ka ci cilen don kojugu !",
-    searchProducts: "Fɛn ɲini..."
+    searchProducts: "Fɛn ɲini...",
+    paymentMethod: "Sara cogoya",
+    cash: "Sara bila waati",
+    orangeMoney: "Orange Money",
+    wave: "Wave",
+    payNow: "Sara sisan",
+    awaitingPayment: "Sara bɛ kɔnɔ",
+    paid: "A saralen",
+    paymentInstructions: "Sara ɲɛfɔli",
+    simulatePayment: "Sara kɛcogo lajɛ",
+    paymentSuccess: "Sara kɛra kojugu !",
+    selectPayment: "I ka sara cogoya sugandi"
   }
 };
 
