@@ -1634,7 +1634,174 @@ const AdminDashboard = () => {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <div className="animate-fade-in-up">
-            <h1 className="text-2xl font-bold text-stone-900 mb-6">{t('manageProducts')}</h1>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-stone-900">{t('manageProducts')}</h1>
+              <button 
+                onClick={() => setShowAddProduct(true)}
+                data-testid="add-product-btn"
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" /> Ajouter un produit
+              </button>
+            </div>
+
+            {/* Add Product Modal */}
+            {showAddProduct && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/50" onClick={() => setShowAddProduct(false)}></div>
+                <div className="relative bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold">Ajouter un produit</h2>
+                    <button onClick={() => setShowAddProduct(false)} className="p-2 hover:bg-stone-100 rounded-full">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <form onSubmit={addProduct} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">Nom (Français) *</label>
+                        <input 
+                          type="text"
+                          value={newProduct.name}
+                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                          required
+                          data-testid="new-product-name"
+                          className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">Nom (Bambara)</label>
+                        <input 
+                          type="text"
+                          value={newProduct.name_bambara}
+                          onChange={(e) => setNewProduct({...newProduct, name_bambara: e.target.value})}
+                          className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">Catégorie *</label>
+                        <select 
+                          value={newProduct.category}
+                          onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                          data-testid="new-product-category"
+                          className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
+                        >
+                          {categories.map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">Poids</label>
+                        <input 
+                          type="text"
+                          value={newProduct.weight}
+                          onChange={(e) => setNewProduct({...newProduct, weight: e.target.value})}
+                          placeholder="Ex: 25 kg"
+                          className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">Prix (€) *</label>
+                        <input 
+                          type="number"
+                          step="0.01"
+                          value={newProduct.price_euro}
+                          onChange={(e) => setNewProduct({...newProduct, price_euro: e.target.value})}
+                          required
+                          data-testid="new-product-price-euro"
+                          className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">Prix (F CFA) *</label>
+                        <input 
+                          type="number"
+                          value={newProduct.price_cfa}
+                          onChange={(e) => setNewProduct({...newProduct, price_cfa: e.target.value})}
+                          required
+                          data-testid="new-product-price-cfa"
+                          className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">Stock *</label>
+                        <input 
+                          type="number"
+                          value={newProduct.stock_quantity}
+                          onChange={(e) => setNewProduct({...newProduct, stock_quantity: e.target.value})}
+                          required
+                          data-testid="new-product-stock"
+                          className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">URL de l'image</label>
+                      <input 
+                        type="url"
+                        value={newProduct.image_url}
+                        onChange={(e) => setNewProduct({...newProduct, image_url: e.target.value})}
+                        placeholder="https://..."
+                        className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>
+                      <textarea 
+                        value={newProduct.description}
+                        onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                        rows={2}
+                        className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none resize-none"
+                      />
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={newProduct.is_available}
+                          onChange={(e) => setNewProduct({...newProduct, is_available: e.target.checked})}
+                          className="w-5 h-5 rounded border-stone-300 text-[#14B53A] focus:ring-[#14B53A]"
+                        />
+                        <span className="text-sm font-medium text-stone-700">Disponible</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={newProduct.is_promotion}
+                          onChange={(e) => setNewProduct({...newProduct, is_promotion: e.target.checked})}
+                          data-testid="new-product-promo"
+                          className="w-5 h-5 rounded border-stone-300 text-[#CE1126] focus:ring-[#CE1126]"
+                        />
+                        <span className="text-sm font-medium text-stone-700">En promotion</span>
+                      </label>
+                    </div>
+                    <div className="flex gap-3 pt-4">
+                      <button 
+                        type="button"
+                        onClick={() => setShowAddProduct(false)}
+                        className="flex-1 py-3 px-4 rounded-xl border border-stone-200 font-semibold text-stone-600 hover:bg-stone-50"
+                      >
+                        Annuler
+                      </button>
+                      <button 
+                        type="submit"
+                        data-testid="submit-new-product"
+                        className="flex-1 btn-primary"
+                      >
+                        Ajouter le produit
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Products Table */}
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -1644,6 +1811,7 @@ const AdminDashboard = () => {
                       <th className="px-4 py-3 text-left text-sm font-semibold text-stone-700">{t('category')}</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-stone-700">{t('price')}</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-stone-700">{t('stock')}</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-stone-700">Promo</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-stone-700">{t('actions')}</th>
                     </tr>
                   </thead>
@@ -1684,12 +1852,36 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-4 py-4">
                           <button 
-                            onClick={() => setEditingProduct(editingProduct === product.id ? null : product.id)}
-                            data-testid={`edit-product-${product.id}`}
-                            className="p-2 hover:bg-stone-100 rounded-lg text-stone-600"
+                            onClick={() => togglePromotion(product.id, product.is_promotion)}
+                            data-testid={`promo-toggle-${product.id}`}
+                            className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
+                              product.is_promotion 
+                                ? 'bg-[#CE1126] text-white' 
+                                : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                            }`}
                           >
-                            <Edit className="w-4 h-4" />
+                            {product.is_promotion ? 'PROMO' : 'Non'}
                           </button>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => setEditingProduct(editingProduct === product.id ? null : product.id)}
+                              data-testid={`edit-product-${product.id}`}
+                              className="p-2 hover:bg-stone-100 rounded-lg text-stone-600"
+                              title="Modifier le stock"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => deleteProduct(product.id)}
+                              data-testid={`delete-product-${product.id}`}
+                              className="p-2 hover:bg-red-50 rounded-lg text-red-500"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
