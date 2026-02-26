@@ -1390,6 +1390,30 @@ const AdminDashboard = () => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    name_bambara: '',
+    category: 'riz',
+    price_euro: '',
+    price_cfa: '',
+    weight: '',
+    description: '',
+    image_url: '',
+    stock_quantity: 0,
+    is_available: true,
+    is_promotion: false
+  });
+
+  const categories = [
+    { value: 'riz', label: 'Riz' },
+    { value: 'lait', label: 'Lait' },
+    { value: 'huile', label: 'Huile' },
+    { value: 'sucre', label: 'Sucre' },
+    { value: 'cereales', label: 'Céréales' },
+    { value: 'pates', label: 'Pâtes' },
+    { value: 'autres', label: 'Autres' }
+  ];
 
   useEffect(() => {
     fetchData();
@@ -1427,6 +1451,54 @@ const AdminDashboard = () => {
     try {
       await axios.put(`${API}/products/${productId}`, data);
       setEditingProduct(null);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const deleteProduct = async (productId) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) return;
+    try {
+      await axios.delete(`${API}/products/${productId}`);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const togglePromotion = async (productId, currentStatus) => {
+    try {
+      await axios.put(`${API}/products/${productId}`, { is_promotion: !currentStatus });
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const addProduct = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/products`, {
+        ...newProduct,
+        price_euro: parseFloat(newProduct.price_euro),
+        price_cfa: parseInt(newProduct.price_cfa),
+        stock_quantity: parseInt(newProduct.stock_quantity)
+      });
+      setShowAddProduct(false);
+      setNewProduct({
+        name: '',
+        name_bambara: '',
+        category: 'riz',
+        price_euro: '',
+        price_cfa: '',
+        weight: '',
+        description: '',
+        image_url: '',
+        stock_quantity: 0,
+        is_available: true,
+        is_promotion: false
+      });
       fetchData();
     } catch (e) {
       console.error(e);
