@@ -1259,6 +1259,28 @@ const CheckoutPage = () => {
                     </div>
                   </label>
 
+                  {/* France Cash Payment Notice */}
+                  {form.payment_method === 'cash' && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Phone className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-blue-900">🇫🇷 Commandes en France</p>
+                        <p className="text-sm text-blue-700 mt-1">
+                          Pour payer après la livraison, contactez le :
+                        </p>
+                        <a 
+                          href="tel:0614313434" 
+                          className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-blue-500 text-white rounded-full font-bold hover:bg-blue-600 transition-colors"
+                        >
+                          <Phone className="w-4 h-4" />
+                          06 14 31 34 34
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Orange Money */}
                   <label 
                     className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
