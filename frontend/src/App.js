@@ -506,10 +506,15 @@ const CartSidebar = () => {
   );
 };
 
+// Products that require phone order
+const PHONE_ORDER_PRODUCTS = ['Poulet', 'Poissons', 'Viande (Petit tas)', 'Viande (Grand tas)'];
+const PHONE_ORDER_NUMBER = '+33 7 45 90 21 34';
+
 // Product Card
 const ProductCard = ({ product, onAddToCart }) => {
   const { t, lang } = useLanguage();
   const name = lang === 'bm' && product.name_bambara ? product.name_bambara : product.name;
+  const requiresPhoneOrder = PHONE_ORDER_PRODUCTS.includes(product.name);
 
   return (
     <div className="product-card" data-testid={`product-card-${product.id}`}>
@@ -524,12 +529,17 @@ const ProductCard = ({ product, onAddToCart }) => {
             <span>{t('promo')}</span>
           </div>
         )}
-        {product.stock_quantity < 10 && product.stock_quantity > 0 && (
+        {requiresPhoneOrder && (
+          <div className="absolute top-3 right-3 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+            <Phone className="w-3 h-3" /> Sur commande
+          </div>
+        )}
+        {!requiresPhoneOrder && product.stock_quantity < 10 && product.stock_quantity > 0 && (
           <div className="absolute top-3 right-3 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold">
             {t('lowStock')}
           </div>
         )}
-        {product.stock_quantity === 0 && (
+        {!requiresPhoneOrder && product.stock_quantity === 0 && (
           <div className="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
             {t('outOfStock')}
           </div>
@@ -545,19 +555,37 @@ const ProductCard = ({ product, onAddToCart }) => {
             <span className="price-cfa">{product.price_cfa.toLocaleString()} F</span>
           </div>
         </div>
-        <button 
-          onClick={() => onAddToCart(product)}
-          disabled={product.stock_quantity === 0}
-          data-testid={`add-to-cart-${product.id}`}
-          className={`w-full rounded-full py-2 font-semibold flex items-center justify-center gap-2 transition-all ${
-            product.stock_quantity === 0 
-              ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
-              : 'btn-primary'
-          }`}
-        >
-          <Plus className="w-5 h-5" />
-          {t('addToCart')}
-        </button>
+        
+        {requiresPhoneOrder ? (
+          <a 
+            href={`tel:${PHONE_ORDER_NUMBER.replace(/\s/g, '')}`}
+            data-testid={`phone-order-${product.id}`}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-full py-2 font-semibold flex items-center justify-center gap-2 transition-all"
+          >
+            <Phone className="w-5 h-5" />
+            Appeler pour commander
+          </a>
+        ) : (
+          <button 
+            onClick={() => onAddToCart(product)}
+            disabled={product.stock_quantity === 0}
+            data-testid={`add-to-cart-${product.id}`}
+            className={`w-full rounded-full py-2 font-semibold flex items-center justify-center gap-2 transition-all ${
+              product.stock_quantity === 0 
+                ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                : 'btn-primary'
+            }`}
+          >
+            <Plus className="w-5 h-5" />
+            {t('addToCart')}
+          </button>
+        )}
+        
+        {requiresPhoneOrder && (
+          <p className="text-xs text-center text-blue-600 mt-2 font-medium">
+            📞 {PHONE_ORDER_NUMBER}
+          </p>
+        )}
       </div>
     </div>
   );
