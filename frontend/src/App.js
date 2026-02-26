@@ -1751,6 +1751,7 @@ const Footer = () => {
             <h4 className="font-bold mb-4">{t('contact')}</h4>
             <div className="space-y-2 text-stone-400">
               <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> +223 64 48 75 74</p>
+              <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> +33 7 45 90 21 34</p>
               <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> 06 14 31 34 34</p>
               <p className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Bamako, Mali 🇲🇱</p>
             </div>
