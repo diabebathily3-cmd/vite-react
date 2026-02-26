@@ -1053,6 +1053,10 @@ const CheckoutPage = () => {
 
   // Step 3: Success
   if (step === 3) {
+    // Send WhatsApp notification to admin
+    const orderSummary = `Nouvelle commande!\n\nClient: ${form.customer_name}\nTél: ${form.customer_phone}\nAdresse: ${form.customer_address}\n\nTotal: ${totalEuro.toFixed(2)}€ / ${totalCfa.toLocaleString()} F CFA`;
+    const whatsappLink = `https://wa.me/33614313434?text=${encodeURIComponent(orderSummary)}`;
+    
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4" data-testid="order-success">
         <div className="bg-white rounded-3xl p-8 text-center max-w-md shadow-lg animate-fade-in-up">
@@ -1064,6 +1068,29 @@ const CheckoutPage = () => {
           {form.payment_method !== 'cash' && (
             <p className="text-[#14B53A] font-semibold mb-4">{t('paymentSuccess')}</p>
           )}
+          
+          {/* Notification Info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
+            <p className="text-sm text-blue-800 font-medium mb-2">
+              📞 Votre commande a été envoyée au :
+            </p>
+            <p className="text-lg font-bold text-blue-900">06 14 31 34 34</p>
+            <p className="text-xs text-blue-600 mt-2">
+              Vous serez contacté pour confirmer la livraison
+            </p>
+          </div>
+
+          {/* WhatsApp confirmation button */}
+          <a 
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full whatsapp-btn justify-center mb-4"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Confirmer via WhatsApp
+          </a>
+          
           <Link to="/" className="btn-primary inline-flex items-center gap-2">
             {t('continueShopping')} <ChevronRight className="w-5 h-5" />
           </Link>
