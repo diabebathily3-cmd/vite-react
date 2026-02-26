@@ -680,6 +680,9 @@ const HomePage = () => {
             <a href="tel:+22364487574" data-testid="phone-btn" className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full flex items-center gap-2 transition-colors">
               <Phone className="w-5 h-5" /> +223 64 48 75 74
             </a>
+            <a href="tel:+33745902134" className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full flex items-center gap-2 transition-colors">
+              <Phone className="w-5 h-5" /> +33 7 45 90 21 34
+            </a>
             <a href="tel:0614313434" className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full flex items-center gap-2 transition-colors">
               <Phone className="w-5 h-5" /> 06 14 31 34 34
             </a>
