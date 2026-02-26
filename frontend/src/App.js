@@ -824,18 +824,26 @@ const ContactPage = () => {
         <h1 className="text-3xl font-black text-stone-900 mb-8 text-center">{t('contact')}</h1>
 
         {/* Contact Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <a href="tel:+22364487574" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
             <Phone className="w-8 h-8 text-[#14B53A] mx-auto mb-2" />
             <p className="font-semibold">+223 64 48 75 74</p>
+            <p className="text-xs text-stone-500">Mali</p>
+          </a>
+          <a href="tel:+33745902134" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
+            <Phone className="w-8 h-8 text-[#14B53A] mx-auto mb-2" />
+            <p className="font-semibold">+33 7 45 90 21 34</p>
+            <p className="text-xs text-stone-500">France</p>
           </a>
           <a href="tel:0614313434" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
             <Phone className="w-8 h-8 text-[#14B53A] mx-auto mb-2" />
             <p className="font-semibold">06 14 31 34 34</p>
+            <p className="text-xs text-stone-500">France</p>
           </a>
           <a href="https://wa.me/22364487574" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
             <MessageCircle className="w-8 h-8 text-[#25D366] mx-auto mb-2" />
             <p className="font-semibold">WhatsApp</p>
+            <p className="text-xs text-stone-500">Chat direct</p>
           </a>
         </div>
 
