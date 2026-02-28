@@ -1475,6 +1475,9 @@ const CheckoutPage = () => {
 // Admin Dashboard
 const AdminDashboard = () => {
   const { t } = useLanguage();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
@@ -1496,6 +1499,34 @@ const AdminDashboard = () => {
     is_available: true,
     is_promotion: false
   });
+
+  // Admin credentials (in production, use environment variables)
+  const ADMIN_USERNAME = 'admin';
+  const ADMIN_PASSWORD = 'GroupeBT2024!';
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (loginForm.username === ADMIN_USERNAME && loginForm.password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setLoginError('');
+      localStorage.setItem('adminAuth', 'true');
+    } else {
+      setLoginError('Nom d\'utilisateur ou mot de passe incorrect');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('adminAuth');
+  };
+
+  // Check if already logged in
+  useEffect(() => {
+    const auth = localStorage.getItem('adminAuth');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   const categories = [
     { value: 'riz', label: 'Riz' },
