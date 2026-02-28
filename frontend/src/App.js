@@ -1653,6 +1653,69 @@ const AdminDashboard = () => {
     { id: 'contacts', icon: Mail, label: t('messages') }
   ];
 
+  // Login Page
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-stone-100 flex items-center justify-center p-4" data-testid="admin-login">
+        <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-lg">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 rounded-full green-gradient flex items-center justify-center mx-auto mb-4">
+              <Package className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-stone-900">Admin - Groupe BT</h1>
+            <p className="text-stone-500 mt-2">Connectez-vous pour gérer l'application</p>
+          </div>
+          
+          {loginError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl mb-6 text-sm">
+              {loginError}
+            </div>
+          )}
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">Nom d'utilisateur</label>
+              <input 
+                type="text"
+                value={loginForm.username}
+                onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                required
+                data-testid="admin-username"
+                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-[#14B53A] focus:ring-2 focus:ring-[#14B53A]/20 outline-none"
+                placeholder="Entrez votre nom d'utilisateur"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">Mot de passe</label>
+              <input 
+                type="password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                required
+                data-testid="admin-password"
+                className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-[#14B53A] focus:ring-2 focus:ring-[#14B53A]/20 outline-none"
+                placeholder="Entrez votre mot de passe"
+              />
+            </div>
+            <button 
+              type="submit"
+              data-testid="admin-login-btn"
+              className="btn-primary w-full py-3"
+            >
+              Se connecter
+            </button>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <Link to="/" className="text-[#14B53A] hover:underline text-sm">
+              ← Retour au site
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-100 flex items-center justify-center">
