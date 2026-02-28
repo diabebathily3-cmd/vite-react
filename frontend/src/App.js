@@ -1747,9 +1747,13 @@ const AdminDashboard = () => {
             </button>
           ))}
         </nav>
-        <div className="mt-auto pt-8">
-          <Link to="/" className="admin-nav-item">
+        <div className="mt-auto pt-8 space-y-2">
+          <button onClick={handleLogout} className="admin-nav-item w-full text-red-400 hover:text-red-300 hover:bg-red-900/20">
             <LogOut className="w-5 h-5" />
+            Déconnexion
+          </button>
+          <Link to="/" className="admin-nav-item">
+            <ChevronRight className="w-5 h-5 rotate-180" />
             Retour au site
           </Link>
         </div>
