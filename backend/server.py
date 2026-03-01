@@ -367,6 +367,9 @@ async def init_payment(request: PaymentInitRequest):
     timestamp = str(int(time.time()))
     amount = order["total_cfa"]
     
+    # Orange Money / Wave number for manual payments
+    PAYMENT_NUMBER = "+223 75 31 98 92"
+    
     if request.payment_method == PaymentMethod.ORANGE_MONEY:
         # Generate Orange Money payment data
         hash_value = generate_orange_money_hash(
@@ -384,13 +387,13 @@ async def init_payment(request: PaymentInitRequest):
             "amount": amount,
             "currency": "XOF",
             "phone_number": request.phone_number,
+            "payment_number": PAYMENT_NUMBER,
             "timestamp": timestamp,
             "hash": hash_value,
             "sandbox": ORANGE_MONEY_CONFIG["sandbox"],
-            "ussd_code": f"*144*4*1*{amount}#",
             "instructions": {
-                "fr": f"Composez *144*4*1*{amount}# sur votre téléphone Orange Money pour payer {amount:,} F CFA",
-                "bm": f"*144*4*1*{amount}# bila i ka Orange Money telefɔni kan ka sara {amount:,} F CFA"
+                "fr": f"Envoyez {amount:,} F CFA au {PAYMENT_NUMBER} via Orange Money. Mentionnez votre nom dans le message.",
+                "bm": f"{amount:,} F CFA ci {PAYMENT_NUMBER} ma Orange Money fɛ. I tɔgɔ sɛbɛn ci kɔnɔ."
             }
         }
         
@@ -413,12 +416,13 @@ async def init_payment(request: PaymentInitRequest):
             "amount": amount,
             "currency": "XOF",
             "phone_number": request.phone_number,
+            "payment_number": PAYMENT_NUMBER,
             "timestamp": timestamp,
             "hash": hash_value,
             "sandbox": WAVE_CONFIG["sandbox"],
             "instructions": {
-                "fr": f"Ouvrez l'application Wave et envoyez {amount:,} F CFA au numéro marchand ou scannez le QR code",
-                "bm": f"Wave application yɛlɛ ka {amount:,} F CFA ci julakɛla nimɔrɔ ma"
+                "fr": f"Envoyez {amount:,} F CFA au {PAYMENT_NUMBER} via Wave. Mentionnez votre nom dans le message.",
+                "bm": f"{amount:,} F CFA ci {PAYMENT_NUMBER} ma Wave fɛ. I tɔgɔ sɛbɛn ci kɔnɔ."
             }
         }
     else:
