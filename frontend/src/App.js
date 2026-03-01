@@ -1163,10 +1163,20 @@ const CheckoutPage = () => {
             </div>
 
             {/* USSD Code for Orange Money */}
-            {paymentData.provider === 'orange_money' && paymentData.ussd_code && (
+            {paymentData.provider === 'orange_money' && (
               <div className="bg-orange-100 rounded-xl p-4 mb-6 text-center">
-                <p className="text-sm text-orange-700 mb-2">Code USSD:</p>
-                <p className="text-2xl font-mono font-bold text-orange-600">{paymentData.ussd_code}</p>
+                <p className="text-sm text-orange-700 mb-2">Envoyez le paiement à ce numéro :</p>
+                <p className="text-2xl font-mono font-bold text-orange-600">+223 75 31 98 92</p>
+                <p className="text-xs text-orange-500 mt-2">Groupe BT Alimentaire</p>
+              </div>
+            )}
+
+            {/* Wave number */}
+            {paymentData.provider === 'wave' && (
+              <div className="bg-cyan-100 rounded-xl p-4 mb-6 text-center">
+                <p className="text-sm text-cyan-700 mb-2">Envoyez le paiement à ce numéro :</p>
+                <p className="text-2xl font-mono font-bold text-cyan-600">+223 75 31 98 92</p>
+                <p className="text-xs text-cyan-500 mt-2">Groupe BT Alimentaire</p>
               </div>
             )}
 
