@@ -1834,10 +1834,101 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
+        {/* Notification Sound */}
+        <audio ref={audioRef} preload="auto">
+          <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQ09LqnL7bhjJwU2mNXrlWwhCji6yMeDfnx5fIqNhYWLgYJ9f3+BhoyLj4yFgn54dHt/hYqNjoqEfnl0dn2Dh4uMi4WCfHZ0eH6DhoqLiYSAe3Z1en+Eh4mKiIJ9eHV4fIKGiImHgn16dnZ7gIWHiIeEf3t4d3qAhIeIh4R/e3d3eoGFhoiGg396d3d7gYSGh4aDf3t4eHuBhIaGhYF9enh5e4KFhoaCf3x4eHuBhIWFhIF+e3l5fIKEhYWDgH17enp8goOFhYOAfHt6e32Cg4SEgoB9e3p7fYKDhISCgH18e3t9gYODg4F+fHt7fH+Bg4OCgX58fHt8f4GCgoKBfnx8e3x/gIGCgoF+fXx7fH+AgIGBgH59fHx8f4CAgYCAfn18fH1/gICAf358fX19f4CAgH99fX19fX9/f399fX19fn5/f399fX19fn5+fn59fX5+fn5+fn19fn5+fn5+fX1+fn5+fn59fX5+fn5+fn19fn5+fn5+fX19fn5+fn59fX1+fn5+fn19fX5+fn5+fX19fn5+fn59fX1+fn5+fn19fX5+fn5+fX19fX5+fn59fX19fn5+fn19fX19fn5+fX19fX1+fn59fX19fX5+fn19fX19fn5+fX19fX1+fn59fX19fX5+fn19fX19fn5+fX19fX1+fn59fX19fX19fn19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fQ==" type="audio/wav" />
+        </audio>
+
+        {/* Top Bar with Notifications */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-stone-900">
+            {activeTab === 'dashboard' && t('dashboard')}
+            {activeTab === 'products' && t('manageProducts')}
+            {activeTab === 'orders' && t('manageOrders')}
+            {activeTab === 'contacts' && t('messages')}
+          </h1>
+          
+          <div className="flex items-center gap-3">
+            {/* Sound Toggle */}
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`p-2 rounded-full transition-colors ${soundEnabled ? 'bg-green-100 text-green-600' : 'bg-stone-100 text-stone-400'}`}
+              title={soundEnabled ? 'Son activé' : 'Son désactivé'}
+            >
+              <Volume2 className="w-5 h-5" />
+            </button>
+
+            {/* Notifications Bell */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                data-testid="notifications-btn"
+                className="relative p-2 rounded-full bg-white shadow-sm hover:shadow-md transition-shadow"
+              >
+                <Bell className={`w-6 h-6 ${notifications.length > 0 ? 'text-[#CE1126]' : 'text-stone-500'}`} />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#CE1126] text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border z-50 overflow-hidden">
+                  <div className="p-4 border-b bg-stone-50 flex items-center justify-between">
+                    <h3 className="font-bold text-stone-900">Notifications</h3>
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={markAllNotificationsRead}
+                        className="text-xs text-[#14B53A] hover:underline"
+                      >
+                        Tout marquer lu
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-stone-400">
+                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Aucune nouvelle notification</p>
+                      </div>
+                    ) : (
+                      notifications.map(notif => (
+                        <div
+                          key={notif.id}
+                          className="p-4 border-b hover:bg-stone-50 cursor-pointer transition-colors"
+                          onClick={() => {
+                            markNotificationRead(notif.id);
+                            setActiveTab('orders');
+                            setShowNotifications(false);
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Package className="w-5 h-5 text-green-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-stone-900 text-sm">Nouvelle commande!</p>
+                              <p className="text-sm text-stone-600 truncate">{notif.customer_name}</p>
+                              <p className="text-xs text-[#14B53A] font-bold mt-1">
+                                {notif.total_euro}€ / {notif.total_cfa?.toLocaleString()} F
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && stats && (
           <div className="animate-fade-in-up">
-            <h1 className="text-2xl font-bold text-stone-900 mb-6">{t('dashboard')}</h1>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <Package className="w-8 h-8 text-[#14B53A] mb-2" />
