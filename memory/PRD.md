@@ -134,12 +134,22 @@ WAVE_SANDBOX=false
 ```
 
 ## Prochaines Actions
-1. Obtenir credentials marchands Orange Money Mali
-2. Obtenir credentials marchands Wave
-3. Ajouter authentification admin sécurisée
-4. Intégrer notifications SMS pour nouvelles commandes
+1. Obtenir credentials marchands Orange Money Mali pour activer les vrais paiements
+2. Obtenir credentials marchands Wave pour activer les vrais paiements
+3. Intégrer Twilio SMS ou SendGrid pour notifications de commandes en temps réel
+4. Ajouter fonctionnalité de changement de mot de passe admin
+
+## Credentials Admin
+- **Username**: admin
+- **Password**: GroupeBT2024!
 
 ## Contacts
 - Téléphone Mali: +223 64 48 75 74
-- Téléphone France: 06 14 31 34 34
+- Téléphone France: +33 7 45 90 21 34
+- Téléphone France (Commandes): 06 14 31 34 34
+- WhatsApp: +223 64 48 75 74
 - Localisation: Bamako, Mali 🇲🇱
+
+## Notes Techniques
+- Les paiements Orange Money et Wave sont **MOCKÉS** (simulation uniquement)
+- Le service worker PWA est actif mais peut causer des problèmes de cache en dev
