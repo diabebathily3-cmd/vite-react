@@ -1053,8 +1053,9 @@ const CheckoutPage = () => {
 
   // Step 3: Success
   if (step === 3) {
-    // Send WhatsApp notification to admin
-    const orderSummary = `Nouvelle commande!\n\nClient: ${form.customer_name}\nTél: ${form.customer_phone}\nAdresse: ${form.customer_address}\n\nTotal: ${totalEuro.toFixed(2)}€ / ${totalCfa.toLocaleString()} F CFA`;
+    // Build detailed order summary for WhatsApp
+    const itemsList = cart.map(item => `• ${item.quantity}x ${item.name} (${item.price_euro}€)`).join('\n');
+    const orderSummary = `🛒 *NOUVELLE COMMANDE*\n\n👤 *Client:* ${form.customer_name}\n📞 *Tél:* ${form.customer_phone}\n📍 *Adresse:* ${form.customer_address}\n\n*Articles:*\n${itemsList}\n\n💰 *Total:* ${totalEuro.toFixed(2)}€ / ${totalCfa.toLocaleString()} F CFA\n💳 *Paiement:* ${form.payment_method === 'cash' ? 'À la livraison' : form.payment_method === 'orange_money' ? 'Orange Money' : 'Wave'}`;
     const whatsappLink = `https://wa.me/33614313434?text=${encodeURIComponent(orderSummary)}`;
     
     return (
@@ -1070,26 +1071,34 @@ const CheckoutPage = () => {
           )}
           
           {/* Notification Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
-            <p className="text-sm text-blue-800 font-medium mb-2">
-              📞 Votre commande a été envoyée au :
-            </p>
-            <p className="text-lg font-bold text-blue-900">06 14 31 34 34</p>
-            <p className="text-xs text-blue-600 mt-2">
-              Vous serez contacté pour confirmer la livraison
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-left">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <Check className="w-4 h-4 text-white" />
+              </div>
+              <p className="text-sm text-green-800 font-medium">
+                Notification envoyée !
+              </p>
+            </div>
+            <p className="text-xs text-green-600">
+              L'équipe Groupe BT a reçu votre commande et vous contactera bientôt.
             </p>
           </div>
 
-          {/* WhatsApp confirmation button */}
+          {/* WhatsApp confirmation button - more prominent */}
           <a 
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full whatsapp-btn justify-center mb-4"
+            data-testid="whatsapp-confirm-btn"
+            className="w-full whatsapp-btn justify-center mb-4 py-4 text-lg"
           >
-            <MessageCircle className="w-5 h-5" />
-            Confirmer via WhatsApp
+            <MessageCircle className="w-6 h-6" />
+            Envoyer via WhatsApp
           </a>
+          <p className="text-xs text-stone-400 mb-4">
+            Cliquez pour confirmer votre commande par WhatsApp
+          </p>
           
           <Link to="/" className="btn-primary inline-flex items-center gap-2">
             {t('continueShopping')} <ChevronRight className="w-5 h-5" />
