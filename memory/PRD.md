@@ -88,8 +88,14 @@ Application e-commerce complète pour **Groupe BT Alimentaire**, entreprise de v
 - Backend: 100% ✅
 - Frontend: 100% ✅
 - Intégration: 100% ✅
-- Mobile Payments: 100% (MOCKED)
+- Mobile Payments: 100% (paiement manuel vers +223 75 31 98 92)
 - Navigation SPA: 100% ✅ (Bug P0 résolu)
+- Notifications: 100% ✅
+
+## Fonctionnalités de Notification (Nouveau - 1er Mars 2026)
+1. **WhatsApp automatique** - Message détaillé avec liste des produits, prix, méthode de paiement
+2. **Notifications in-app** - Cloche avec badge rouge + son (activable) + polling toutes les 10s
+3. **Numéro Orange Money/Wave** - +223 75 31 98 92 affiché pour les paiements manuels
 
 ## Backlog Priorisé
 
@@ -97,14 +103,16 @@ Application e-commerce complète pour **Groupe BT Alimentaire**, entreprise de v
 - [x] Catalogue produits avec filtres
 - [x] Panier et commandes
 - [x] Dashboard admin sécurisé (login: admin/GroupeBT2024!)
-- [x] Paiement mobile Orange Money & Wave (mode démo)
+- [x] Paiement mobile Orange Money & Wave (manuel vers +223 75 31 98 92)
 - [x] Navigation SPA - routes directes fonctionnelles
 - [x] PWA avec icônes personnalisées
 - [x] SEO (meta tags, sitemap, robots.txt)
 - [x] Bilinguisme FR/Bambara
+- [x] Notifications in-app avec son
+- [x] WhatsApp automatique avec détails commande
 
 ### P1 (Important) - À Faire
-- [ ] Notifications réelles de commandes (SMS Twilio ou Email SendGrid)
+- [ ] Notifications Email (SendGrid) - prêt à implémenter
 - [ ] Activation production Orange Money (credentials marchands requis)
 - [ ] Activation production Wave (credentials marchands requis)
 - [ ] Changement de mot de passe admin
