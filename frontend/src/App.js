@@ -1486,6 +1486,11 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const lastNotificationCount = useRef(0);
+  const audioRef = useRef(null);
   const [newProduct, setNewProduct] = useState({
     name: '',
     name_bambara: '',
@@ -1503,6 +1508,59 @@ const AdminDashboard = () => {
   // Admin credentials (in production, use environment variables)
   const ADMIN_USERNAME = 'admin';
   const ADMIN_PASSWORD = 'GroupeBT2024!';
+
+  // Play notification sound
+  const playNotificationSound = useCallback(() => {
+    if (soundEnabled && audioRef.current) {
+      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+    }
+  }, [soundEnabled]);
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const res = await axios.get(`${API}/notifications?unread_only=true`);
+      const newNotifs = res.data;
+      
+      // Play sound if there are new notifications
+      if (newNotifs.length > lastNotificationCount.current && lastNotificationCount.current !== 0) {
+        playNotificationSound();
+      }
+      lastNotificationCount.current = newNotifs.length;
+      setNotifications(newNotifs);
+    } catch (e) {
+      console.error('Failed to fetch notifications:', e);
+    }
+  }, [isAuthenticated, playNotificationSound]);
+
+  // Poll for new notifications every 10 seconds
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, fetchNotifications]);
+
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await axios.put(`${API}/notifications/${notificationId}/read`);
+      fetchNotifications();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    try {
+      await axios.put(`${API}/notifications/read-all`);
+      fetchNotifications();
+      setShowNotifications(false);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
