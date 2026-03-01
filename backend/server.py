@@ -382,7 +382,7 @@ async def init_payment(request: PaymentInitRequest):
         
     elif request.payment_method == PaymentMethod.WAVE:
         # Generate Wave payment data
-        backend_url = os.environ.get("REACT_APP_BACKEND_URL", "https://dietary-pro.preview.emergentagent.com")
+        backend_url = os.environ.get("REACT_APP_BACKEND_URL", "https://mali-market-2.preview.emergentagent.com")
         hash_value = generate_wave_hash(
             WAVE_CONFIG["merchant_id"],
             request.order_id,
