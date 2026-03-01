@@ -563,6 +563,41 @@ async def get_dashboard_stats():
         unread_contacts=unread_contacts
     )
 
+# ===================== NOTIFICATIONS =====================
+
+@api_router.get("/notifications")
+async def get_notifications(unread_only: bool = True):
+    """Get notifications for admin dashboard"""
+    query = {"read": False} if unread_only else {}
+    notifications = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return notifications
+
+@api_router.get("/notifications/count")
+async def get_unread_notifications_count():
+    """Get count of unread notifications"""
+    count = await db.notifications.count_documents({"read": False})
+    return {"count": count}
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str):
+    """Mark a notification as read"""
+    result = await db.notifications.update_one(
+        {"id": notification_id},
+        {"$set": {"read": True}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notification non trouvée")
+    return {"message": "Notification marquée comme lue"}
+
+@api_router.put("/notifications/read-all")
+async def mark_all_notifications_read():
+    """Mark all notifications as read"""
+    await db.notifications.update_many(
+        {"read": False},
+        {"$set": {"read": True}}
+    )
+    return {"message": "Toutes les notifications marquées comme lues"}
+
 # ===================== SEED DATA =====================
 
 @api_router.post("/seed")
