@@ -297,6 +297,20 @@ async def create_order(input: OrderCreate):
     doc = order.model_dump()
     serialize_doc(doc)
     await db.orders.insert_one(doc)
+    
+    # Store notification for admin dashboard
+    notification = {
+        "id": str(uuid.uuid4()),
+        "type": "new_order",
+        "order_id": order.id,
+        "customer_name": order.customer_name,
+        "total_euro": order.total_euro,
+        "total_cfa": order.total_cfa,
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.notifications.insert_one(notification)
+    
     return order
 
 @api_router.put("/orders/{order_id}/status")
