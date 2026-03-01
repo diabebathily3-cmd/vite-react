@@ -1,10 +1,13 @@
-# PROGET ALIMENTATION - PRD
+# Groupe BT Alimentaire - PRD
 
 ## Énoncé du Problème
-Application de gestion de stock et commandes pour PROGET ALIMENTATION, une entreprise de vente de produits alimentaires basée à Bamako, Mali.
+Application e-commerce complète pour **Groupe BT Alimentaire**, entreprise de vente de produits alimentaires en gros et détail basée à Bamako, Mali. Permet aux clients d'acheter des produits alimentaires avec livraison et paiement mobile (Orange Money, Wave).
 
 ## Date de Création
 25 Février 2026
+
+## Dernière Mise à Jour
+1er Mars 2026
 
 ## Personas Utilisateurs
 1. **Clients** - Acheteurs de produits alimentaires (gros et détail) à Bamako et diaspora malienne
