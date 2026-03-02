@@ -25,6 +25,11 @@ db = client[os.environ['DB_NAME']]
 # Create the main app
 app = FastAPI(title="Groupe BT Alimentaire API")
 
+# Health check endpoint for Kubernetes (at root level, not /api)
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
@@ -399,12 +404,12 @@ async def init_payment(request: PaymentInitRequest):
         
     elif request.payment_method == PaymentMethod.WAVE:
         # Generate Wave payment data
-        backend_url = os.environ.get("REACT_APP_BACKEND_URL", "https://mali-market-2.preview.emergentagent.com")
+        backend_url = os.environ.get("BACKEND_URL", os.environ.get("REACT_APP_BACKEND_URL", ""))
         hash_value = generate_wave_hash(
             WAVE_CONFIG["merchant_id"],
             request.order_id,
             amount,
-            f"{backend_url}/api/payments/callback",
+            f"{backend_url}/api/payments/callback" if backend_url else "",
             timestamp,
             WAVE_CONFIG["client_secret"] or "demo_secret_key"
         )
