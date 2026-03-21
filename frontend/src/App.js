@@ -7,7 +7,8 @@ import {
   Menu, X, Plus, Minus, Trash2, Send, MapPin, Clock, Truck,
   LayoutDashboard, PackageSearch, ClipboardList, Mail, LogOut,
   Edit, Check, AlertCircle, TrendingUp, Users, Star, Filter,
-  RefreshCw, Smartphone, Banknote, CreditCard, Wallet, Bell, Volume2
+  RefreshCw, Smartphone, Banknote, CreditCard, Wallet, Bell, Volume2,
+  Store, Receipt
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -1001,8 +1002,8 @@ const CheckoutPage = () => {
       const res = await axios.post(`${API}/orders`, orderData);
       setOrderId(res.data.id);
       
-      if (form.payment_method === 'cash') {
-        // Direct to success for cash payment
+      if (form.payment_method === 'cash' || form.payment_method === 'in_store') {
+        // Direct to success for cash payment or in-store pickup
         clearCart();
         setStep(3);
       } else {
@@ -1055,7 +1056,7 @@ const CheckoutPage = () => {
   if (step === 3) {
     // Build detailed order summary for WhatsApp
     const itemsList = cart.map(item => `• ${item.quantity}x ${item.name} (${item.price_euro}€)`).join('\n');
-    const orderSummary = `🛒 *NOUVELLE COMMANDE*\n\n👤 *Client:* ${form.customer_name}\n📞 *Tél:* ${form.customer_phone}\n📍 *Adresse:* ${form.customer_address}\n\n*Articles:*\n${itemsList}\n\n💰 *Total:* ${totalEuro.toFixed(2)}€ / ${totalCfa.toLocaleString()} F CFA\n💳 *Paiement:* ${form.payment_method === 'cash' ? 'À la livraison' : form.payment_method === 'orange_money' ? 'Orange Money' : 'Wave'}`;
+    const orderSummary = `🛒 *NOUVELLE COMMANDE*\n\n👤 *Client:* ${form.customer_name}\n📞 *Tél:* ${form.customer_phone}\n📍 *Adresse:* ${form.customer_address}\n\n*Articles:*\n${itemsList}\n\n💰 *Total:* ${totalEuro.toFixed(2)}€ / ${totalCfa.toLocaleString()} F CFA\n💳 *Paiement:* ${form.payment_method === 'cash' ? 'À la livraison' : form.payment_method === 'orange_money' ? 'Orange Money' : form.payment_method === 'wave' ? 'Wave' : 'Retrait en magasin'}`;
     const whatsappLink = `https://wa.me/33614313434?text=${encodeURIComponent(orderSummary)}`;
     
     return (
@@ -1406,6 +1407,40 @@ const CheckoutPage = () => {
                       <p className="text-sm text-stone-500">Paiement mobile Wave</p>
                     </div>
                   </label>
+
+                  {/* In-Store Payment Option */}
+                  <label 
+                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      form.payment_method === 'in_store' 
+                        ? 'border-[#14B53A] bg-green-50' 
+                        : 'border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    <input 
+                      type="radio"
+                      name="payment_method"
+                      value="in_store"
+                      checked={form.payment_method === 'in_store'}
+                      onChange={(e) => setForm({...form, payment_method: e.target.value})}
+                      data-testid="payment-instore"
+                      className="w-5 h-5 text-[#14B53A] focus:ring-[#14B53A]"
+                    />
+                    <div className="w-12 h-12 bg-[#14B53A] rounded-xl flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-stone-900">Retrait en magasin</p>
+                      <p className="text-sm text-stone-500">Venez récupérer et payer sur place</p>
+                    </div>
+                  </label>
+                  {form.payment_method === 'in_store' && (
+                    <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                      <p className="font-semibold text-green-900 mb-2">📍 Adresse du magasin :</p>
+                      <p className="text-green-800">Bamako, Mali</p>
+                      <p className="text-green-700 text-sm mt-2">📞 +223 75 31 98 92</p>
+                      <p className="text-green-600 text-xs mt-2">Ouvert : Lun-Sam 8h-18h</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1510,6 +1545,15 @@ const AdminDashboard = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const lastNotificationCount = useRef(0);
   const audioRef = useRef(null);
+  
+  // POS States
+  const [posCart, setPosCart] = useState([]);
+  const [posPaymentMethod, setPosPaymentMethod] = useState('cash');
+  const [posCustomerName, setPosCustomerName] = useState('');
+  const [posSales, setPosSales] = useState([]);
+  const [posDailySummary, setPosDailySummary] = useState(null);
+  const [posLoading, setPosLoading] = useState(false);
+  
   const [newProduct, setNewProduct] = useState({
     name: '',
     name_bambara: '',
@@ -1676,6 +1720,92 @@ const AdminDashboard = () => {
     }
   };
 
+  // POS Functions
+  const addToPosCart = (product) => {
+    const existing = posCart.find(item => item.id === product.id);
+    if (existing) {
+      setPosCart(posCart.map(item => 
+        item.id === product.id 
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setPosCart([...posCart, { ...product, quantity: 1 }]);
+    }
+  };
+
+  const updatePosQuantity = (productId, delta) => {
+    setPosCart(posCart.map(item => {
+      if (item.id === productId) {
+        const newQty = item.quantity + delta;
+        return newQty > 0 ? { ...item, quantity: newQty } : item;
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
+  };
+
+  const removePosItem = (productId) => {
+    setPosCart(posCart.filter(item => item.id !== productId));
+  };
+
+  const clearPosCart = () => {
+    setPosCart([]);
+    setPosCustomerName('');
+  };
+
+  const posTotalCfa = posCart.reduce((sum, item) => sum + (item.price_cfa * item.quantity), 0);
+  const posTotalEuro = posCart.reduce((sum, item) => sum + (item.price_euro * item.quantity), 0);
+
+  const fetchPosSales = async () => {
+    try {
+      const [salesRes, summaryRes] = await Promise.all([
+        axios.get(`${API}/pos/sales`),
+        axios.get(`${API}/pos/daily-summary`)
+      ]);
+      setPosSales(salesRes.data);
+      setPosDailySummary(summaryRes.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const processPOSSale = async () => {
+    if (posCart.length === 0) return;
+    
+    setPosLoading(true);
+    try {
+      const saleData = {
+        items: posCart.map(item => ({
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          price_euro: item.price_euro,
+          price_cfa: item.price_cfa
+        })),
+        payment_method: posPaymentMethod,
+        customer_name: posCustomerName || 'Client magasin'
+      };
+      
+      await axios.post(`${API}/pos/sale`, saleData);
+      clearPosCart();
+      fetchData(); // Refresh stock
+      fetchPosSales(); // Refresh sales
+      alert('✅ Vente enregistrée !');
+    } catch (e) {
+      console.error(e);
+      alert('Erreur lors de l\'enregistrement de la vente');
+    } finally {
+      setPosLoading(false);
+    }
+  };
+
+  // Fetch POS sales when tab changes to POS
+  useEffect(() => {
+    if (activeTab === 'pos') {
+      fetchPosSales();
+    }
+  }, [activeTab]);
+
   const addProduct = async (e) => {
     e.preventDefault();
     try {
@@ -1725,6 +1855,7 @@ const AdminDashboard = () => {
 
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+    { id: 'pos', icon: Store, label: 'Caisse' },
     { id: 'products', icon: PackageSearch, label: t('manageProducts') },
     { id: 'orders', icon: ClipboardList, label: t('manageOrders') },
     { id: 'contacts', icon: Mail, label: t('messages') }
@@ -1862,6 +1993,7 @@ const AdminDashboard = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-stone-900">
             {activeTab === 'dashboard' && t('dashboard')}
+            {activeTab === 'pos' && '🏪 Caisse'}
             {activeTab === 'products' && t('manageProducts')}
             {activeTab === 'orders' && t('manageOrders')}
             {activeTab === 'contacts' && t('messages')}
@@ -1984,6 +2116,183 @@ const AdminDashboard = () => {
                   <Mail className="w-5 h-5 text-blue-500" />
                   Messages non lus: {stats.unread_contacts}
                 </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* POS / Caisse Tab */}
+        {activeTab === 'pos' && (
+          <div className="animate-fade-in-up">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Products Grid */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+                  <h2 className="font-bold text-lg mb-4">Sélectionner les produits</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {products.filter(p => p.is_available).map(product => (
+                      <button
+                        key={product.id}
+                        onClick={() => addToPosCart(product)}
+                        className="p-3 border-2 border-stone-200 rounded-xl hover:border-[#14B53A] hover:bg-green-50 transition-all text-left"
+                      >
+                        <p className="font-semibold text-sm truncate">{product.name}</p>
+                        <p className="text-xs text-stone-500">{product.price_cfa?.toLocaleString()} F</p>
+                        <p className="text-xs text-[#14B53A] font-bold">{product.price_euro}€</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Daily Summary */}
+                {posDailySummary && (
+                  <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white">
+                    <h3 className="font-bold text-lg mb-4">📊 Ventes du jour</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-green-100 text-sm">Nombre de ventes</p>
+                        <p className="text-3xl font-black">{posDailySummary.total_sales}</p>
+                      </div>
+                      <div>
+                        <p className="text-green-100 text-sm">Total CFA</p>
+                        <p className="text-2xl font-bold">{posDailySummary.total_cfa?.toLocaleString()} F</p>
+                      </div>
+                      <div>
+                        <p className="text-green-100 text-sm">Total EUR</p>
+                        <p className="text-2xl font-bold">{posDailySummary.total_euro?.toFixed(2)}€</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cart / Receipt */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-2xl p-6 shadow-sm sticky top-4">
+                  <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <Receipt className="w-5 h-5" /> Ticket de caisse
+                  </h2>
+                  
+                  {posCart.length === 0 ? (
+                    <div className="text-center py-8 text-stone-400">
+                      <Store className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>Panier vide</p>
+                      <p className="text-sm">Cliquez sur un produit pour l'ajouter</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                        {posCart.map(item => (
+                          <div key={item.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl">
+                            <div className="flex-1">
+                              <p className="font-semibold text-sm">{item.name}</p>
+                              <p className="text-xs text-stone-500">{item.price_cfa?.toLocaleString()} F x {item.quantity}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button 
+                                onClick={() => updatePosQuantity(item.id, -1)}
+                                className="w-8 h-8 rounded-full bg-stone-200 hover:bg-stone-300 flex items-center justify-center"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="w-8 text-center font-bold">{item.quantity}</span>
+                              <button 
+                                onClick={() => updatePosQuantity(item.id, 1)}
+                                className="w-8 h-8 rounded-full bg-[#14B53A] text-white hover:bg-green-600 flex items-center justify-center"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => removePosItem(item.id)}
+                                className="w-8 h-8 rounded-full bg-red-100 text-red-500 hover:bg-red-200 flex items-center justify-center ml-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Total */}
+                      <div className="border-t-2 border-dashed pt-4 mb-4">
+                        <div className="flex justify-between text-lg font-bold">
+                          <span>TOTAL:</span>
+                          <span className="text-[#14B53A]">{posTotalCfa.toLocaleString()} F CFA</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-stone-500">
+                          <span></span>
+                          <span>{posTotalEuro.toFixed(2)}€</span>
+                        </div>
+                      </div>
+
+                      {/* Customer Name (optional) */}
+                      <input
+                        type="text"
+                        placeholder="Nom du client (optionnel)"
+                        value={posCustomerName}
+                        onChange={(e) => setPosCustomerName(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border border-stone-200 mb-4 text-sm"
+                      />
+
+                      {/* Payment Method */}
+                      <div className="grid grid-cols-3 gap-2 mb-4">
+                        <button
+                          onClick={() => setPosPaymentMethod('cash')}
+                          className={`p-2 rounded-xl text-xs font-semibold transition-all ${
+                            posPaymentMethod === 'cash' 
+                              ? 'bg-[#14B53A] text-white' 
+                              : 'bg-stone-100 hover:bg-stone-200'
+                          }`}
+                        >
+                          💵 Cash
+                        </button>
+                        <button
+                          onClick={() => setPosPaymentMethod('orange_money')}
+                          className={`p-2 rounded-xl text-xs font-semibold transition-all ${
+                            posPaymentMethod === 'orange_money' 
+                              ? 'bg-orange-500 text-white' 
+                              : 'bg-stone-100 hover:bg-stone-200'
+                          }`}
+                        >
+                          🟠 Orange
+                        </button>
+                        <button
+                          onClick={() => setPosPaymentMethod('wave')}
+                          className={`p-2 rounded-xl text-xs font-semibold transition-all ${
+                            posPaymentMethod === 'wave' 
+                              ? 'bg-cyan-500 text-white' 
+                              : 'bg-stone-100 hover:bg-stone-200'
+                          }`}
+                        >
+                          🔵 Wave
+                        </button>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="space-y-2">
+                        <button
+                          onClick={processPOSSale}
+                          disabled={posLoading}
+                          className="w-full py-4 bg-[#14B53A] hover:bg-green-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors"
+                        >
+                          {posLoading ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <>
+                              <Check className="w-5 h-5" /> Encaisser
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={clearPosCart}
+                          className="w-full py-2 bg-stone-100 hover:bg-stone-200 rounded-xl font-semibold text-stone-600 transition-colors"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

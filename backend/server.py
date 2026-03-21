@@ -57,6 +57,7 @@ class PaymentMethod(str, Enum):
     CASH = "cash"
     ORANGE_MONEY = "orange_money"
     WAVE = "wave"
+    IN_STORE = "in_store"  # Paiement en magasin
 
 class PaymentStatus(str, Enum):
     PENDING = "pending"
@@ -606,6 +607,78 @@ async def mark_all_notifications_read():
         {"$set": {"read": True}}
     )
     return {"message": "Toutes les notifications marquées comme lues"}
+
+# ===================== POS / CAISSE =====================
+
+class POSItem(BaseModel):
+    product_id: str
+    product_name: str
+    quantity: int
+    price_euro: float
+    price_cfa: int
+
+class POSSale(BaseModel):
+    items: List[POSItem]
+    payment_method: str = "cash"  # cash, orange_money, wave
+    customer_name: Optional[str] = "Client magasin"
+    notes: Optional[str] = None
+
+@api_router.post("/pos/sale")
+async def create_pos_sale(sale: POSSale):
+    """Create a new POS sale (in-store transaction)"""
+    total_euro = sum(item.price_euro * item.quantity for item in sale.items)
+    total_cfa = sum(item.price_cfa * item.quantity for item in sale.items)
+    
+    sale_record = {
+        "id": str(uuid.uuid4()),
+        "type": "pos_sale",
+        "items": [item.model_dump() for item in sale.items],
+        "total_euro": round(total_euro, 2),
+        "total_cfa": total_cfa,
+        "payment_method": sale.payment_method,
+        "customer_name": sale.customer_name,
+        "notes": sale.notes,
+        "status": "completed",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.pos_sales.insert_one(sale_record)
+    
+    # Update stock for each item
+    for item in sale.items:
+        await db.products.update_one(
+            {"id": item.product_id},
+            {"$inc": {"stock_quantity": -item.quantity}}
+        )
+    
+    return {"message": "Vente enregistrée", "sale_id": sale_record["id"], "total_euro": total_euro, "total_cfa": total_cfa}
+
+@api_router.get("/pos/sales")
+async def get_pos_sales(limit: int = 50):
+    """Get recent POS sales"""
+    sales = await db.pos_sales.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return sales
+
+@api_router.get("/pos/daily-summary")
+async def get_daily_summary():
+    """Get today's POS sales summary"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    sales = await db.pos_sales.find(
+        {"created_at": {"$regex": f"^{today}"}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    total_euro = sum(s.get("total_euro", 0) for s in sales)
+    total_cfa = sum(s.get("total_cfa", 0) for s in sales)
+    
+    return {
+        "date": today,
+        "total_sales": len(sales),
+        "total_euro": round(total_euro, 2),
+        "total_cfa": total_cfa,
+        "sales": sales
+    }
 
 # ===================== SEED DATA =====================
 
