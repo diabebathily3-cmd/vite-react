@@ -633,7 +633,7 @@ const HomePage = () => {
                   {t('discoverProducts')} <ChevronRight className="w-5 h-5" />
                 </Link>
                 <a 
-                  href="https://wa.me/22364487574" 
+                  href="https://wa.me/22375319892" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   data-testid="whatsapp-btn"
@@ -706,8 +706,8 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-8">{t('contact')}</h2>
           <div className="flex flex-wrap justify-center gap-6">
-            <a href="tel:+22364487574" data-testid="phone-btn" className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full flex items-center gap-2 transition-colors">
-              <Phone className="w-5 h-5" /> +223 64 48 75 74
+            <a href="tel:+22375319892" data-testid="phone-btn" className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full flex items-center gap-2 transition-colors">
+              <Phone className="w-5 h-5" /> +223 75 31 98 92
             </a>
             <a href="tel:+33745902134" className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full flex items-center gap-2 transition-colors">
               <Phone className="w-5 h-5" /> +33 7 45 90 21 34
@@ -715,7 +715,7 @@ const HomePage = () => {
             <a href="tel:0614313434" className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full flex items-center gap-2 transition-colors">
               <Phone className="w-5 h-5" /> 06 14 31 34 34
             </a>
-            <a href="https://wa.me/22364487574" target="_blank" rel="noopener noreferrer" className="whatsapp-btn">
+            <a href="https://wa.me/22375319892" target="_blank" rel="noopener noreferrer" className="whatsapp-btn">
               <MessageCircle className="w-5 h-5" /> WhatsApp
             </a>
           </div>
@@ -854,9 +854,9 @@ const ContactPage = () => {
 
         {/* Contact Info */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <a href="tel:+22364487574" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
+          <a href="tel:+22375319892" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
             <Phone className="w-8 h-8 text-[#14B53A] mx-auto mb-2" />
-            <p className="font-semibold">+223 64 48 75 74</p>
+            <p className="font-semibold">+223 75 31 98 92</p>
             <p className="text-xs text-stone-500">Mali</p>
           </a>
           <a href="tel:+33745902134" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
@@ -869,7 +869,7 @@ const ContactPage = () => {
             <p className="font-semibold">06 14 31 34 34</p>
             <p className="text-xs text-stone-500">France</p>
           </a>
-          <a href="https://wa.me/22364487574" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
+          <a href="https://wa.me/22375319892" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow">
             <MessageCircle className="w-8 h-8 text-[#25D366] mx-auto mb-2" />
             <p className="font-semibold">WhatsApp</p>
             <p className="text-xs text-stone-500">Chat direct</p>
@@ -1436,7 +1436,7 @@ const CheckoutPage = () => {
                   {form.payment_method === 'in_store' && (
                     <div className="bg-green-50 p-4 rounded-xl border border-green-200">
                       <p className="font-semibold text-green-900 mb-2">📍 Adresse du magasin :</p>
-                      <p className="text-green-800">Bamako, Mali</p>
+                      <p className="text-green-800 font-bold">H273+9Q6 Bamako</p>
                       <p className="text-green-700 text-sm mt-2">📞 +223 75 31 98 92</p>
                       <p className="text-green-600 text-xs mt-2">Ouvert : Lun-Sam 8h-18h</p>
                     </div>
@@ -2689,10 +2689,10 @@ const Footer = () => {
           <div>
             <h4 className="font-bold mb-4">{t('contact')}</h4>
             <div className="space-y-2 text-stone-400">
-              <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> +223 64 48 75 74</p>
+              <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> +223 75 31 98 92</p>
               <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> +33 7 45 90 21 34</p>
               <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> 06 14 31 34 34</p>
-              <p className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Bamako, Mali 🇲🇱</p>
+              <p className="flex items-center gap-2"><MapPin className="w-4 h-4" /> H273+9Q6 Bamako, Mali 🇲🇱</p>
             </div>
           </div>
           <div>
