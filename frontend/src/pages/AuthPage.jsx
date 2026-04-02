@@ -81,8 +81,9 @@ const AuthPage = () => {
         {/* Auth Card */}
         <div className="bg-white border border-black p-8 shadow-[4px_4px_0px_0px_rgba(255,190,0,1)]">
           {/* Logo */}
-          <div className="flex items-center justify-center mb-8">
-            <img src={LOGO_URL} alt="SIRA TAXI" className="h-20 w-auto" />
+          <div className="flex flex-col items-center justify-center mb-8" data-testid="auth-logo">
+            <img src={LOGO_URL} alt="SIRA TAXI" className="h-24 w-auto mb-2" />
+            <span className="font-['Outfit'] font-black text-lg tracking-tight">SIRA <span className="text-[#FFBE00]">TAXI</span></span>
           </div>
 
           {/* Title */}

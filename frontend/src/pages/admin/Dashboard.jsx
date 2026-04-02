@@ -104,6 +104,7 @@ const AdminDashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
+          <img src="https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png" alt="SIRA TAXI" className="h-20 w-auto mx-auto mb-4" />
           <div className="w-16 h-16 border-4 border-black border-t-[#FFBE00] rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-lg font-medium">Chargement...</p>
         </div>
@@ -114,10 +115,13 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-[#F4F4F5]" data-testid="admin-dashboard">
       {/* Header */}
-      <header className="bg-black text-white px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src={LOGO_URL} alt="SIRA TAXI" className="h-10 w-auto" />
-          <span className="text-[#FFBE00] text-sm font-bold">ADMIN</span>
+      <header className="bg-black text-white px-4 py-3 flex items-center justify-between border-b-2 border-[#FFBE00]">
+        <div className="flex items-center gap-3" data-testid="admin-header-logo">
+          <img src={LOGO_URL} alt="SIRA TAXI" className="h-12 w-auto" />
+          <div className="flex flex-col leading-tight">
+            <span className="font-['Outfit'] font-black text-base text-white tracking-tight">SIRA <span className="text-[#FFBE00]">TAXI</span></span>
+            <span className="text-[#FFBE00] text-[10px] font-bold tracking-widest">ADMINISTRATION</span>
+          </div>
         </div>
         
         <div className="flex items-center gap-4">

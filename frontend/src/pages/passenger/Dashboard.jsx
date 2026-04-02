@@ -251,6 +251,7 @@ const PassengerDashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
+          <img src="https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png" alt="SIRA TAXI" className="h-20 w-auto mx-auto mb-4" />
           <div className="w-16 h-16 border-4 border-black border-t-[#FFBE00] rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-lg font-medium">Chargement...</p>
         </div>
@@ -261,9 +262,10 @@ const PassengerDashboard = () => {
   return (
     <div className="h-screen flex flex-col bg-white" data-testid="passenger-dashboard">
       {/* Header */}
-      <header className="border-b border-black px-4 py-3 flex items-center justify-between bg-white z-10">
-        <div className="flex items-center gap-2">
-          <img src={LOGO_URL} alt="SIRA TAXI" className="h-10 w-auto" />
+      <header className="border-b-2 border-black px-4 py-3 flex items-center justify-between bg-white z-10">
+        <div className="flex items-center gap-2" data-testid="passenger-header-logo">
+          <img src={LOGO_URL} alt="SIRA TAXI" className="h-12 w-auto" />
+          <span className="font-['Outfit'] font-black text-base tracking-tight">SIRA <span className="text-[#FFBE00]">TAXI</span></span>
         </div>
         
         <button

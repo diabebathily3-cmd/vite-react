@@ -1,29 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
     <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#000000" />
-        <meta name="description" content="A product of emergent.sh" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="theme-color" content="#FFBE00" />
+        <meta name="description" content="SIRA TAXI - Application de taxi et moto-taxi au Mali. Réservez en un clic!" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="SIRA TAXI" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/logo192.png" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
-        <!--
-        manifest.json provides metadata used when your web app is installed on a
-        user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-        -->
-        <!--
-        Notice the use of %PUBLIC_URL% in the tags above.
-        It will be replaced with the URL of the `public` folder during the build.
-        Only files inside the `public` folder can be referenced from the HTML.
-
-        Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-        work correctly both with client-side routing and a non-root public URL.
-        Learn how to configure a non-root public URL by running `npm run build`.
-        -->
-        <title>Emergent | Fullstack App</title>
+        <title>SIRA TAXI - Taxi & Moto-Taxi Mali</title>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
+        <style>
+            /* PWA Install Banner Styles */
+            .pwa-install-banner {
+                position: fixed;
+                bottom: 70px;
+                left: 16px;
+                right: 16px;
+                background: #000;
+                color: #fff;
+                padding: 16px;
+                border: 2px solid #FFBE00;
+                box-shadow: 4px 4px 0px 0px #FFBE00;
+                z-index: 9998;
+                display: none;
+            }
+            .pwa-install-banner.show {
+                display: block;
+                animation: slideUp 0.3s ease-out;
+            }
+            @keyframes slideUp {
+                from { transform: translateY(100%); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        </style>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -38,6 +55,70 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+        <!-- PWA Install Banner -->
+        <div id="pwa-install-banner" class="pwa-install-banner">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <img src="/logo192.png" alt="SIRA TAXI" style="width:48px;height:48px;border-radius:8px;">
+                <div style="flex:1;">
+                    <p style="margin:0;font-weight:bold;font-size:14px;">Installer SIRA TAXI</p>
+                    <p style="margin:0;font-size:12px;color:#ccc;">Accédez rapidement à l'app</p>
+                </div>
+                <button id="pwa-install-btn" style="background:#FFBE00;color:#000;border:2px solid #000;padding:8px 16px;font-weight:bold;cursor:pointer;">INSTALLER</button>
+                <button id="pwa-dismiss-btn" style="background:none;border:none;color:#999;cursor:pointer;font-size:18px;padding:4px 8px;">&times;</button>
+            </div>
+        </div>
+
+        <!-- Service Worker Registration & PWA Install Prompt -->
+        <script>
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/service-worker.js')
+                        .then(function(registration) {
+                            console.log('SIRA TAXI SW enregistré:', registration.scope);
+                        })
+                        .catch(function(error) {
+                            console.log('SIRA TAXI SW erreur:', error);
+                        });
+                });
+            }
+
+            // PWA Install Prompt
+            let deferredPrompt;
+            const installBanner = document.getElementById('pwa-install-banner');
+            const installBtn = document.getElementById('pwa-install-btn');
+            const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+            window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                deferredPrompt = e;
+                installBanner.classList.add('show');
+            });
+
+            if (installBtn) {
+                installBtn.addEventListener('click', async function() {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log('SIRA TAXI install:', outcome);
+                        deferredPrompt = null;
+                        installBanner.classList.remove('show');
+                    }
+                });
+            }
+
+            if (dismissBtn) {
+                dismissBtn.addEventListener('click', function() {
+                    installBanner.classList.remove('show');
+                });
+            }
+
+            window.addEventListener('appinstalled', function() {
+                installBanner.classList.remove('show');
+                console.log('SIRA TAXI installée!');
+            });
+        </script>
+
         <a
             id="emergent-badge"
             target="_blank"

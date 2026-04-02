@@ -24,9 +24,10 @@ const LandingPage = () => {
       {/* Header */}
       <header className="border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <img src={LOGO_URL} alt="SIRA TAXI" className="h-12 w-auto" />
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center gap-3" data-testid="header-logo">
+              <img src={LOGO_URL} alt="SIRA TAXI" className="h-14 w-auto" />
+              <span className="font-['Outfit'] font-black text-xl text-white tracking-tight hidden sm:block">SIRA <span className="text-[#FFBE00]">TAXI</span></span>
             </div>
             
             <div className="flex items-center gap-4">
@@ -95,13 +96,16 @@ const LandingPage = () => {
               </div>
             </div>
             
-            <div className="relative flex justify-center">
-              <img
-                src={LOGO_URL}
-                alt="SIRA TAXI"
-                className="w-80 h-80 object-contain"
-              />
-              <div className="absolute -bottom-4 -right-4 bg-[#FFBE00] border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="relative flex justify-center" data-testid="hero-logo">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[#FFBE00]/10 rounded-full blur-3xl scale-110"></div>
+                <img
+                  src={LOGO_URL}
+                  alt="SIRA TAXI"
+                  className="w-72 h-72 sm:w-96 sm:h-96 object-contain relative z-10 drop-shadow-[0_0_30px_rgba(255,190,0,0.3)]"
+                />
+              </div>
+              <div className="absolute -bottom-4 -right-4 bg-[#FFBE00] border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-20">
                 <p className="font-['Outfit'] font-bold text-2xl">24/7</p>
                 <p className="text-sm">Disponible</p>
               </div>
@@ -214,7 +218,7 @@ const LandingPage = () => {
               <img
                 src={LOGO_URL}
                 alt="SIRA TAXI Driver"
-                className="w-64 h-64 object-contain"
+                className="w-72 h-72 object-contain drop-shadow-[0_0_20px_rgba(0,0,0,0.3)]"
               />
             </div>
           </div>
@@ -225,11 +229,12 @@ const LandingPage = () => {
       <footer className="border-t border-gray-800 bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <img src={LOGO_URL} alt="SIRA TAXI" className="h-10 w-auto" />
+            <div className="flex items-center gap-3" data-testid="footer-logo">
+              <img src={LOGO_URL} alt="SIRA TAXI" className="h-12 w-auto" />
+              <span className="font-['Outfit'] font-black text-lg text-white">SIRA <span className="text-[#FFBE00]">TAXI</span></span>
             </div>
             <p className="text-sm text-gray-500">
-              © 2024 SIRA TAXI. Tous droits réservés. Bamako, Mali
+              © 2025 SIRA TAXI. Tous droits réservés. Bamako, Mali
             </p>
           </div>
         </div>

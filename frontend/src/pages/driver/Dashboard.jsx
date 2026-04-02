@@ -230,10 +230,11 @@ const DriverDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-black border-t-[#FFBE00] rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Chargement...</p>
+          <img src="https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png" alt="SIRA TAXI" className="h-20 w-auto mx-auto mb-4" />
+          <div className="w-16 h-16 border-4 border-[#FFBE00] border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-medium text-white">Chargement...</p>
         </div>
       </div>
     );
@@ -242,10 +243,13 @@ const DriverDashboard = () => {
   return (
     <div className="h-screen flex flex-col bg-white" data-testid="driver-dashboard">
       {/* Header */}
-      <header className="border-b border-black px-4 py-3 flex items-center justify-between bg-black z-10">
-        <div className="flex items-center gap-2">
-          <img src={LOGO_URL} alt="SIRA TAXI" className="h-10 w-auto" />
-          <span className="text-[#FFBE00] text-xs font-bold">CHAUFFEUR</span>
+      <header className="border-b-2 border-[#FFBE00] px-4 py-3 flex items-center justify-between bg-black z-10">
+        <div className="flex items-center gap-2" data-testid="driver-header-logo">
+          <img src={LOGO_URL} alt="SIRA TAXI" className="h-12 w-auto" />
+          <div className="flex flex-col leading-tight">
+            <span className="font-['Outfit'] font-black text-base text-white tracking-tight">SIRA <span className="text-[#FFBE00]">TAXI</span></span>
+            <span className="text-[#FFBE00] text-[10px] font-bold tracking-widest">CHAUFFEUR</span>
+          </div>
         </div>
         
         <div className="flex items-center gap-3">

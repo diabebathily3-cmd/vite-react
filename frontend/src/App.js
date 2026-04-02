@@ -109,8 +109,9 @@ const ProtectedRoute = ({ children, roles }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
+          <img src="https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png" alt="SIRA TAXI" className="h-20 w-auto mx-auto mb-4" />
           <div className="w-16 h-16 border-4 border-black border-t-[#FFBE00] rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Chargement...</p>
+          <p className="text-lg font-medium font-['Outfit']">Chargement...</p>
         </div>
       </div>
     );

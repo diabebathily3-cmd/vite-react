@@ -1,0 +1,45 @@
+{
+  "name": "SIRA TAXI",
+  "short_name": "SIRA TAXI",
+  "description": "Application de taxi et moto-taxi au Mali - Réservez en un clic",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#FFBE00",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["transportation", "travel"],
+  "lang": "fr",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Réserver un taxi",
+      "short_name": "Taxi",
+      "description": "Réserver une course en taxi",
+      "url": "/passenger",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Espace Chauffeur",
+      "short_name": "Chauffeur",
+      "description": "Accéder à l'espace chauffeur",
+      "url": "/driver",
+      "icons": [{ "src": "/logo192.png", "sizes": "192x192" }]
+    }
+  ]
+}
