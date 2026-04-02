@@ -1,63 +1,92 @@
-# MaliRide - PRD (Product Requirements Document)
+# SIRA TAXI - Product Requirements Document
 
 ## Original Problem Statement
-Application de taxi type Uber pour le Mali avec toutes les fonctionnalités.
-
-## User Choices
-1. **Interfaces**: Passager + Chauffeur + Admin Dashboard
-2. **Paiement**: Espèces + Mobile Money
-3. **Fonctionnalités**: Chat temps réel, GPS, estimation prix, historique, notation
-4. **Authentification**: JWT + Google OAuth
-
-## Architecture
-- **Backend**: FastAPI + MongoDB
-- **Frontend**: React + TailwindCSS + Shadcn UI
-- **Style**: Neo-Brutalist (Swiss High-Contrast)
-- **Couleurs**: Primary #FFBE00, Secondary #0A0A0A
+Application de transport (ride-hailing) comme Uber pour les taxis au Mali avec toutes les fonctionnalités. Rebaptisée "SIRA TAXI".
 
 ## User Personas
-1. **Passager**: Réserve courses, suit chauffeur, paie, note
-2. **Chauffeur**: Accepte courses, navigue, gère revenus
-3. **Admin**: Gère utilisateurs, surveille courses, statistiques
+- **Passager**: Réserve des courses, suit en temps réel, paye en espèces ou Mobile Money
+- **Chauffeur**: Accepte des courses, gère son portefeuille, consulte ses gains
+- **Admin**: Gère les utilisateurs, suit les courses, consulte les revenus et commissions de la plateforme
 
-## Core Requirements (Static)
-- [x] Système d'authentification (JWT + Google OAuth)
-- [x] Interface passager avec réservation
-- [x] Interface chauffeur avec acceptation de courses
-- [x] Dashboard admin avec statistiques
-- [x] Estimation de prix avant course
-- [x] Système de notation
-- [x] Chat en temps réel
-- [x] Historique des courses
+## Core Requirements
+- Auth JWT + Google OAuth
+- 3 rôles distincts (Admin, Chauffeur, Passager)
+- Profils distincts pour chauffeurs et passagers
+- Réservation de courses avec choix du véhicule (TAXI/MOTO)
+- Tarification dynamique par type de véhicule
+- Portefeuille chauffeur pour les gains
+- Portefeuille plateforme (admin) avec commission 15%
+- Chat en temps réel entre chauffeur et passager
+- Historique des courses
+- Évaluations/notes
+- Design Neo-Brutalist (noir/jaune #FFBE00)
 
-## What's Been Implemented (02/04/2026)
-- Backend API complet avec tous les endpoints
-- Frontend avec 3 interfaces (passager, chauffeur, admin)
-- Authentification JWT + Google OAuth
-- Estimation de prix basée sur distance
-- Système de notation
-- Chat entre passager et chauffeur
-- Dashboard admin avec stats
+## Tech Stack
+- **Frontend**: React, Tailwind CSS, Shadcn UI
+- **Backend**: FastAPI, Python
+- **Database**: MongoDB (Motor)
+- **Auth**: JWT + Emergent Google OAuth
+
+## What's Been Implemented (All DONE)
+1. Full-stack scaffolding (Auth, Users, Rides)
+2. Distinct Driver Profile
+3. Driver Wallet with earnings tracking
+4. Platform Commission Wallet (Admin)
+5. Rebranding to "SIRA TAXI"
+6. Deployment Guide & Backend Optimizations
+7. Distinct Passenger Profile
+8. MOTO-TAXI vehicle option & pricing logic
+9. **Logo visibility enhancement** - Logo now prominent on all pages (header, hero, auth, dashboards, footer, loading screens)
+10. **PWA setup** - manifest.json, service-worker.js, PWA icons (192x192, 512x512), favicon, install banner
+
+## Architecture
+```
+/app/
+├── backend/
+│   ├── server.py (FastAPI, all endpoints)
+│   ├── seed_admin.py
+│   ├── .env
+│   └── requirements.txt
+├── frontend/
+│   ├── public/
+│   │   ├── index.html (PWA meta, SW registration, install banner)
+│   │   ├── manifest.json
+│   │   ├── service-worker.js
+│   │   ├── logo192.png
+│   │   ├── logo512.png
+│   │   └── favicon.ico
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── LandingPage.jsx
+│   │   │   ├── AuthPage.jsx
+│   │   │   ├── admin/ (Dashboard.jsx, PlatformWallet.jsx)
+│   │   │   ├── driver/ (Dashboard.jsx, Profile.jsx, Wallet.jsx)
+│   │   │   └── passenger/ (Dashboard.jsx, Profile.jsx)
+│   │   ├── components/ui/ (Shadcn)
+│   │   ├── App.js
+│   │   └── index.css
+│   ├── package.json
+│   └── .env
+└── memory/ (PRD.md, test_credentials.md)
+```
+
+## Key API Endpoints
+- POST /api/auth/login, POST /api/auth/register, GET /api/auth/me
+- GET /api/rides/estimate, POST /api/rides, GET /api/rides/active
+- GET /api/wallet, GET /api/wallet/transactions
+- GET /api/admin/stats, GET /api/admin/platform-wallet
 
 ## Prioritized Backlog
 
-### P0 (Done)
-- [x] MVP fonctionnel
+### P0 (Critical)
+- [ ] Driver vehicle type configuration (Voiture/Moto) in profile
+- [ ] Driver filtering/dispatching based on vehicle type
 
-### P1 (Next)
-- [ ] Intégration carte réelle (Leaflet/Google Maps)
-- [ ] Notifications push
-- [ ] Orange Money API integration
+### P1 (Important)
+- [ ] Backend refactoring - Split server.py into routers
 
-### P2
-- [ ] Système de promotion/codes promo
-- [ ] Support multi-langue
-- [ ] Analytics avancées
-
-## Test Credentials
-- Admin: admin@maliride.ml / Admin123!
-
-## Next Tasks
-1. Intégrer vraies cartes GPS
-2. Connecter Orange Money API
-3. Ajouter notifications temps réel
+### P2 (Future)
+- [ ] Real geolocation APIs (Google Maps) integration
+- [ ] Real-time chat with WebSockets
+- [ ] Push notifications
+- [ ] Payment gateway integration (Orange Money, etc.)
