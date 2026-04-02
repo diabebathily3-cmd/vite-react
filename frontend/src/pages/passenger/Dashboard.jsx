@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
@@ -98,10 +98,25 @@ const PassengerDashboard = () => {
     try {
       const response = await axios.get(`${API}/rides/active`);
       if (response.data) {
+        const prevRide = activeRideRef.current;
         setActiveRide(response.data);
-        setBookingStep("active");
+        
         if (response.data.driver_id) {
+          // Driver found! Switch to active view
+          if (!prevRide?.driver_id) {
+            toast.success("Chauffeur trouvé !");
+          }
+          setBookingStep("active");
           fetchMessages(response.data.ride_id);
+        } else if (response.data.status === "pending") {
+          setBookingStep("searching");
+        }
+      } else {
+        // No active ride — reset to location step
+        if (activeRideRef.current) {
+          setActiveRide(null);
+          setBookingStep("location");
+          fetchHistory();
         }
       }
     } catch (error) {
@@ -127,6 +142,12 @@ const PassengerDashboard = () => {
     }
   };
 
+  // Use a ref to track activeRide for polling without stale closure
+  const activeRideRef = useRef(activeRide);
+  useEffect(() => {
+    activeRideRef.current = activeRide;
+  }, [activeRide]);
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
@@ -138,12 +159,7 @@ const PassengerDashboard = () => {
     
     // Poll for updates
     const interval = setInterval(() => {
-      if (activeRide) {
-        fetchActiveRide();
-        if (activeRide.driver_id) {
-          fetchMessages(activeRide.ride_id);
-        }
-      }
+      fetchActiveRide();
     }, 5000);
     
     return () => clearInterval(interval);
@@ -182,17 +198,6 @@ const PassengerDashboard = () => {
       setActiveRide(response.data);
       setBookingStep("searching");
       toast.success("Course demandée! Recherche d'un chauffeur...");
-      
-      // Poll for driver assignment
-      const checkDriver = setInterval(async () => {
-        const updated = await axios.get(`${API}/rides/active`);
-        if (updated.data?.driver_id) {
-          setActiveRide(updated.data);
-          setBookingStep("active");
-          clearInterval(checkDriver);
-          toast.success("Chauffeur trouvé!");
-        }
-      }, 3000);
     } catch (error) {
       toast.error(error.response?.data?.detail || "Erreur lors de la réservation");
     }
@@ -282,7 +287,7 @@ const PassengerDashboard = () => {
         <MapView pickup={pickup} dropoff={dropoff} driverLocation={activeRide?.driver?.current_location} />
         
         {/* Bottom Sheet */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black slide-up">
+        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black slide-up pb-14">
           {/* Location Selection */}
           {bookingStep === "location" && (
             <div className="p-4" data-testid="booking-location-step">
@@ -509,6 +514,7 @@ const PassengerDashboard = () => {
               
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-['Outfit'] font-bold text-lg">
+                  {activeRide.status === "pending" && "RECHERCHE D'UN CHAUFFEUR..."}
                   {activeRide.status === "accepted" && "CHAUFFEUR EN ROUTE"}
                   {activeRide.status === "arrived" && "CHAUFFEUR ARRIVÉ"}
                   {activeRide.status === "in_progress" && "EN COURSE"}

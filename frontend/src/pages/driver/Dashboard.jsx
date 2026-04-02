@@ -316,7 +316,7 @@ const DriverDashboard = () => {
         </div>
 
         {/* Bottom Panel */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black">
+        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black pb-14">
           {/* No active ride - Show pending rides or waiting message */}
           {!activeRide && (
             <div className="p-4" data-testid="pending-rides-panel">
