@@ -578,10 +578,16 @@ async def get_pending_rides(user: dict = Depends(get_current_user)):
     
     rides = await db.rides.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1).to_list(20)
     
-    # Add passenger info
+    # Batch fetch all passengers (optimized - single query)
+    passenger_ids = [r["passenger_id"] for r in rides]
+    passengers = await db.users.find(
+        {"user_id": {"$in": passenger_ids}}, 
+        {"_id": 0, "password": 0}
+    ).to_list(len(passenger_ids))
+    passenger_map = {p["user_id"]: p for p in passengers}
+    
     for ride in rides:
-        passenger = await db.users.find_one({"user_id": ride["passenger_id"]}, {"_id": 0, "password": 0})
-        ride["passenger"] = passenger
+        ride["passenger"] = passenger_map.get(ride["passenger_id"])
     
     return rides
 
@@ -760,14 +766,25 @@ async def get_ride_history(user: dict = Depends(get_current_user)):
     
     rides = await db.rides.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
     
-    # Add other party info
+    # Batch fetch all users (optimized - single query)
+    user_ids = set()
     for ride in rides:
         if user["role"] == "passenger" and ride.get("driver_id"):
-            driver = await db.users.find_one({"user_id": ride["driver_id"]}, {"_id": 0, "password": 0})
-            ride["driver"] = driver
+            user_ids.add(ride["driver_id"])
         elif user["role"] == "driver":
-            passenger = await db.users.find_one({"user_id": ride["passenger_id"]}, {"_id": 0, "password": 0})
-            ride["passenger"] = passenger
+            user_ids.add(ride["passenger_id"])
+    
+    users = await db.users.find(
+        {"user_id": {"$in": list(user_ids)}}, 
+        {"_id": 0, "password": 0}
+    ).to_list(len(user_ids))
+    user_map = {u["user_id"]: u for u in users}
+    
+    for ride in rides:
+        if user["role"] == "passenger" and ride.get("driver_id"):
+            ride["driver"] = user_map.get(ride["driver_id"])
+        elif user["role"] == "driver":
+            ride["passenger"] = user_map.get(ride["passenger_id"])
     
     return rides
 
@@ -1220,12 +1237,23 @@ async def get_all_rides(user: dict = Depends(get_current_user)):
     
     rides = await db.rides.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
     
+    # Batch fetch all users (optimized - 2 queries max instead of 200)
+    user_ids = set()
     for ride in rides:
-        passenger = await db.users.find_one({"user_id": ride["passenger_id"]}, {"_id": 0, "password": 0})
-        ride["passenger"] = passenger
+        user_ids.add(ride["passenger_id"])
         if ride.get("driver_id"):
-            driver = await db.users.find_one({"user_id": ride["driver_id"]}, {"_id": 0, "password": 0})
-            ride["driver"] = driver
+            user_ids.add(ride["driver_id"])
+    
+    users = await db.users.find(
+        {"user_id": {"$in": list(user_ids)}}, 
+        {"_id": 0, "password": 0}
+    ).to_list(len(user_ids))
+    user_map = {u["user_id"]: u for u in users}
+    
+    for ride in rides:
+        ride["passenger"] = user_map.get(ride["passenger_id"])
+        if ride.get("driver_id"):
+            ride["driver"] = user_map.get(ride["driver_id"])
     
     return rides
 
