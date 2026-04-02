@@ -623,11 +623,19 @@ async def get_active_ride(user: dict = Depends(get_current_user)):
 
 @api_router.get("/rides/pending")
 async def get_pending_rides(user: dict = Depends(get_current_user)):
-    """Get pending rides for drivers"""
+    """Get pending rides for drivers - filtered by driver's vehicle category"""
     if user["role"] != "driver":
         raise HTTPException(status_code=403, detail="Réservé aux chauffeurs")
     
-    rides = await db.rides.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    # Get driver's vehicle category
+    vehicle_info = user.get("vehicle_info") or {}
+    driver_vehicle_category = vehicle_info.get("vehicle_category", "car")
+    
+    # Filter rides by vehicle type matching driver's category
+    rides = await db.rides.find(
+        {"status": "pending", "vehicle_type": driver_vehicle_category}, 
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(20)
     
     # Batch fetch all passengers (optimized - single query)
     passenger_ids = [r["passenger_id"] for r in rides]

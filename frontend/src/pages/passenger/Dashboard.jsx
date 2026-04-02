@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
 import PassengerProfile from "./Profile";
+import LocationSearch from "../../components/LocationSearch";
 
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -204,7 +205,7 @@ const PassengerDashboard = () => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // Bamako locations for demo
+  // Bamako locations for demo (kept as fallback for quick selection)
   const bamakoLocations = [
     { name: "ACI 2000", lat: 12.6461, lng: -7.9925 },
     { name: "Hamdallaye", lat: 12.6234, lng: -8.0156 },
@@ -475,49 +476,29 @@ const PassengerDashboard = () => {
         <MapView pickup={pickup} dropoff={dropoff} driverLocation={activeRide?.driver?.current_location} myLocation={myLocation} />
         
         {/* Bottom Sheet */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black slide-up pb-14">
+        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black slide-up pb-14 z-[500]">
           {/* Location Selection */}
           {bookingStep === "location" && (
             <div className="p-4" data-testid="booking-location-step">
               <h2 className="font-['Outfit'] font-bold text-lg mb-4">OÙ ALLEZ-VOUS?</h2>
               
-              {/* Pickup */}
-              <div className="mb-3">
-                <label className="text-sm font-medium text-gray-600 block mb-1">Point de départ</label>
-                <select
-                  className="brutalist-input w-full p-3"
-                  onChange={(e) => {
-                    const loc = bamakoLocations.find(l => l.name === e.target.value);
-                    if (loc) setPickup({ ...loc, address: loc.name });
-                  }}
-                  value={pickup?.address || ""}
-                  data-testid="pickup-select"
-                >
-                  <option value="">Sélectionner le départ</option>
-                  {bamakoLocations.map(loc => (
-                    <option key={loc.name} value={loc.name}>{loc.name}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Pickup Search */}
+              <LocationSearch
+                label="Point de départ"
+                placeholder="Rechercher un quartier..."
+                value={pickup}
+                onChange={(loc) => setPickup(loc)}
+                testId="pickup-search"
+              />
               
-              {/* Dropoff */}
-              <div className="mb-4">
-                <label className="text-sm font-medium text-gray-600 block mb-1">Destination</label>
-                <select
-                  className="brutalist-input w-full p-3"
-                  onChange={(e) => {
-                    const loc = bamakoLocations.find(l => l.name === e.target.value);
-                    if (loc) setDropoff({ ...loc, address: loc.name });
-                  }}
-                  value={dropoff?.address || ""}
-                  data-testid="dropoff-select"
-                >
-                  <option value="">Sélectionner la destination</option>
-                  {bamakoLocations.map(loc => (
-                    <option key={loc.name} value={loc.name}>{loc.name}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Dropoff Search */}
+              <LocationSearch
+                label="Destination"
+                placeholder="Rechercher une destination..."
+                value={dropoff}
+                onChange={(loc) => setDropoff(loc)}
+                testId="dropoff-search"
+              />
               
               {/* Vehicle Type Selection */}
               <div className="mb-4">

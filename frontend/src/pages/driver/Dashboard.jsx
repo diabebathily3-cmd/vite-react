@@ -120,7 +120,8 @@ const DriverDashboard = () => {
     model: "",
     year: "",
     plate: "",
-    color: ""
+    color: "",
+    vehicle_category: "car"
   });
   
   // Chat
@@ -612,7 +613,7 @@ const DriverDashboard = () => {
         </div>
 
         {/* Bottom Panel */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black pb-14">
+        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black pb-14 z-[500]">
           {/* No active ride - Show pending rides or waiting message */}
           {!activeRide && (
             <div className="p-4" data-testid="pending-rides-panel">
@@ -938,6 +939,38 @@ const DriverDashboard = () => {
             <h3 className="font-['Outfit'] font-bold text-xl mb-4">INFORMATIONS VÉHICULE</h3>
             
             <div className="space-y-4">
+              {/* Vehicle Category Selection */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Catégorie de véhicule</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setVehicleInfo({ ...vehicleInfo, vehicle_category: "car" })}
+                    className={`p-4 border-2 border-black flex flex-col items-center gap-2 transition-all ${
+                      vehicleInfo.vehicle_category === "car"
+                        ? "bg-[#FFBE00] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                        : "bg-white hover:bg-gray-50"
+                    }`}
+                    data-testid="modal-vehicle-car-btn"
+                  >
+                    <Car className="w-8 h-8" />
+                    <span className="font-bold">VOITURE</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVehicleInfo({ ...vehicleInfo, vehicle_category: "moto" })}
+                    className={`p-4 border-2 border-black flex flex-col items-center gap-2 transition-all ${
+                      vehicleInfo.vehicle_category === "moto"
+                        ? "bg-[#FFBE00] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                        : "bg-white hover:bg-gray-50"
+                    }`}
+                    data-testid="modal-vehicle-moto-btn"
+                  >
+                    <Bike className="w-8 h-8" />
+                    <span className="font-bold">MOTO</span>
+                  </button>
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Marque</label>
                 <input

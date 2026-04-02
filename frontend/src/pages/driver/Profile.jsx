@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, Star, Camera, FileText, Shield, Phone, Mail, 
-  MapPin, Calendar, Award, TrendingUp, ArrowLeft, Edit, Save, X, Lock, Eye, EyeOff
+  MapPin, Calendar, Award, TrendingUp, ArrowLeft, Edit, Save, X, Lock, Eye, EyeOff, Bike
 } from "lucide-react";
 
 const DriverProfile = ({ onClose }) => {
@@ -28,7 +28,8 @@ const DriverProfile = ({ onClose }) => {
     year: "",
     plate: "",
     color: "",
-    type: "sedan" // sedan, suv, minivan
+    type: "sedan",
+    vehicle_category: "car" // car or moto
   });
   
   // Documents
@@ -296,22 +297,68 @@ const DriverProfile = ({ onClose }) => {
                 <input type="text" value={vehicleInfo.plate} onChange={(e) => setVehicleInfo({ ...vehicleInfo, plate: e.target.value })} className="bg-gray-800 border border-gray-700 text-white w-full p-3 focus:border-[#FFBE00] focus:outline-none" placeholder="AB-1234-ML" data-testid="vehicle-plate-input" />
               </div>
               <div className="col-span-2">
-                <label className="text-sm text-gray-500 block mb-1">Type de véhicule</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {["sedan", "suv", "minivan"].map((type) => (
-                    <button key={type} type="button" onClick={() => setVehicleInfo({ ...vehicleInfo, type })} className={`p-3 border font-medium uppercase text-sm transition-colors ${vehicleInfo.type === type ? "bg-[#FFBE00] border-black text-black" : "bg-gray-800 border-gray-700 text-gray-300 hover:border-[#FFBE00]"}`}>{type}</button>
-                  ))}
+                <label className="text-sm text-gray-500 block mb-1">Catégorie de véhicule</label>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setVehicleInfo({ ...vehicleInfo, vehicle_category: "car" })}
+                    className={`p-4 border flex flex-col items-center gap-2 transition-colors ${
+                      vehicleInfo.vehicle_category === "car"
+                        ? "bg-[#FFBE00] border-black text-black"
+                        : "bg-gray-800 border-gray-700 text-gray-300 hover:border-[#FFBE00]"
+                    }`}
+                    data-testid="vehicle-category-car"
+                  >
+                    <Car className="w-8 h-8" />
+                    <span className="font-bold text-sm">VOITURE</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVehicleInfo({ ...vehicleInfo, vehicle_category: "moto" })}
+                    className={`p-4 border flex flex-col items-center gap-2 transition-colors ${
+                      vehicleInfo.vehicle_category === "moto"
+                        ? "bg-[#FFBE00] border-black text-black"
+                        : "bg-gray-800 border-gray-700 text-gray-300 hover:border-[#FFBE00]"
+                    }`}
+                    data-testid="vehicle-category-moto"
+                  >
+                    <Bike className="w-8 h-8" />
+                    <span className="font-bold text-sm">MOTO</span>
+                  </button>
                 </div>
               </div>
+              {vehicleInfo.vehicle_category === "car" && (
+                <div className="col-span-2">
+                  <label className="text-sm text-gray-500 block mb-1">Type de carrosserie</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["sedan", "suv", "minivan"].map((type) => (
+                      <button key={type} type="button" onClick={() => setVehicleInfo({ ...vehicleInfo, type })} className={`p-3 border font-medium uppercase text-sm transition-colors ${vehicleInfo.type === type ? "bg-[#FFBE00] border-black text-black" : "bg-gray-800 border-gray-700 text-gray-300 hover:border-[#FFBE00]"}`}>{type}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div>
               {vehicleInfo.make ? (
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 bg-gray-800 border border-gray-700 flex items-center justify-center">
-                    <Car className="w-10 h-10 text-[#FFBE00]" />
+                    {vehicleInfo.vehicle_category === "moto" ? (
+                      <Bike className="w-10 h-10 text-[#FFBE00]" />
+                    ) : (
+                      <Car className="w-10 h-10 text-[#FFBE00]" />
+                    )}
                   </div>
                   <div>
+                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 mb-1 text-xs font-bold ${
+                      vehicleInfo.vehicle_category === "moto" ? "bg-orange-500 text-white" : "bg-blue-500 text-white"
+                    }`}>
+                      {vehicleInfo.vehicle_category === "moto" ? (
+                        <><Bike className="w-3 h-3" /> MOTO</>
+                      ) : (
+                        <><Car className="w-3 h-3" /> VOITURE</>
+                      )}
+                    </div>
                     <p className="font-bold text-lg text-white">{vehicleInfo.make} {vehicleInfo.model}</p>
                     <p className="text-gray-400">{vehicleInfo.year} • {vehicleInfo.color}</p>
                     <p className="font-mono text-lg bg-[#FFBE00] inline-block px-3 py-1 mt-2 border border-black">{vehicleInfo.plate}</p>
@@ -363,31 +410,31 @@ const DriverProfile = ({ onClose }) => {
           )}
         </div>
 
-        {/* Documents */}
-        <div className="brutalist-card bg-white p-6 mb-4" data-testid="documents-section">
-          <h2 className="font-['Outfit'] font-bold text-lg mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5" />
+        {/* Documents - DARK */}
+        <div className="bg-gray-900 border border-gray-800 p-6 mb-4" data-testid="documents-section">
+          <h2 className="font-['Outfit'] font-bold text-lg mb-4 flex items-center gap-2 text-white">
+            <FileText className="w-5 h-5 text-[#FFBE00]" />
             DOCUMENTS
           </h2>
           
           <div className="space-y-3">
             {[
-              { key: "license", label: "Permis de conduire", icon: <FileText className="w-5 h-5" /> },
-              { key: "insurance", label: "Assurance véhicule", icon: <Shield className="w-5 h-5" /> },
-              { key: "registration", label: "Carte grise", icon: <FileText className="w-5 h-5" /> },
-              { key: "photo_id", label: "Pièce d'identité", icon: <FileText className="w-5 h-5" /> }
+              { key: "license", label: "Permis de conduire", icon: <FileText className="w-5 h-5 text-[#FFBE00]" /> },
+              { key: "insurance", label: "Assurance véhicule", icon: <Shield className="w-5 h-5 text-[#FFBE00]" /> },
+              { key: "registration", label: "Carte grise", icon: <FileText className="w-5 h-5 text-[#FFBE00]" /> },
+              { key: "photo_id", label: "Pièce d'identité", icon: <FileText className="w-5 h-5 text-[#FFBE00]" /> }
             ].map((doc) => (
               <div
                 key={doc.key}
-                className={`flex items-center justify-between p-4 border border-black ${
-                  documents[doc.key] ? "bg-green-50" : "bg-gray-50"
+                className={`flex items-center justify-between p-4 border ${
+                  documents[doc.key] ? "bg-green-900/30 border-green-700" : "bg-gray-800 border-gray-700"
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 text-white">
                   {doc.icon}
                   <span className="font-medium">{doc.label}</span>
                 </div>
-                <span className={`status-badge ${documents[doc.key] ? "status-online" : "status-offline"}`}>
+                <span className={`text-xs font-bold px-2 py-1 ${documents[doc.key] ? "bg-green-500 text-white" : "bg-gray-700 text-gray-400"}`}>
                   {documents[doc.key] ? "Vérifié" : "Non soumis"}
                 </span>
               </div>
@@ -399,9 +446,9 @@ const DriverProfile = ({ onClose }) => {
           </p>
         </div>
 
-        {/* Recent Activity */}
-        <div className="brutalist-card bg-white p-6" data-testid="recent-activity">
-          <h2 className="font-['Outfit'] font-bold text-lg mb-4">
+        {/* Recent Activity - DARK */}
+        <div className="bg-gray-900 border border-gray-800 p-6" data-testid="recent-activity">
+          <h2 className="font-['Outfit'] font-bold text-lg mb-4 text-white">
             ACTIVITÉ RÉCENTE
           </h2>
           
@@ -410,13 +457,13 @@ const DriverProfile = ({ onClose }) => {
           ) : (
             <div className="space-y-3">
               {completedRides.slice(0, 5).map((ride) => (
-                <div key={ride.ride_id} className="flex items-center justify-between p-3 border border-gray-200">
+                <div key={ride.ride_id} className="flex items-center justify-between p-3 border border-gray-700 bg-gray-800">
                   <div>
-                    <p className="font-medium text-sm">{ride.pickup_location.address}</p>
-                    <p className="text-xs text-gray-500">→ {ride.dropoff_location.address}</p>
+                    <p className="font-medium text-sm text-white">{ride.pickup_location.address}</p>
+                    <p className="text-xs text-gray-400">→ {ride.dropoff_location.address}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">{(ride.final_price || ride.estimated_price).toLocaleString()} FCFA</p>
+                    <p className="font-bold text-[#FFBE00]">{(ride.final_price || ride.estimated_price).toLocaleString()} FCFA</p>
                     <p className="text-xs text-gray-500">{new Date(ride.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
