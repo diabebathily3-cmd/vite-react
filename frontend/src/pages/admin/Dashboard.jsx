@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, Users, MapPin, DollarSign, TrendingUp, 
-  Menu, X, LogOut, User, Check, Ban, Activity, Wallet, Building
+  Menu, X, LogOut, User, Check, Ban, Activity, Wallet, Building, CreditCard
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import PlatformWallet from "./PlatformWallet";
@@ -25,6 +25,12 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [rides, setRides] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Driver Payments
+  const [driverWallets, setDriverWallets] = useState([]);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [payingDriver, setPayingDriver] = useState(null);
+  const [payAmount, setPayAmount] = useState("");
 
   const fetchStats = useCallback(async () => {
     try {
@@ -62,10 +68,44 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const fetchDriverWallets = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/admin/drivers/wallets`);
+      setDriverWallets(response.data);
+    } catch (error) {
+      console.error("Error fetching driver wallets:", error);
+    }
+  }, []);
+
+  const fetchPaymentHistory = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/admin/payments/history`);
+      setPaymentHistory(response.data);
+    } catch (error) {
+      console.error("Error fetching payment history:", error);
+    }
+  }, []);
+
+  const handlePayDriver = async () => {
+    if (!payingDriver || !payAmount) return;
+    try {
+      await axios.post(`${API}/admin/drivers/${payingDriver.user_id}/pay`, {
+        amount: parseFloat(payAmount)
+      });
+      toast.success(`Paiement de ${parseInt(payAmount).toLocaleString()} FCFA effectué !`);
+      setPayingDriver(null);
+      setPayAmount("");
+      fetchDriverWallets();
+      fetchPaymentHistory();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Erreur lors du paiement");
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([fetchStats(), fetchUsers(), fetchRides(), fetchPlatformWallet()]);
+      await Promise.all([fetchStats(), fetchUsers(), fetchRides(), fetchPlatformWallet(), fetchDriverWallets(), fetchPaymentHistory()]);
       setLoading(false);
     };
     init();
@@ -75,10 +115,11 @@ const AdminDashboard = () => {
       fetchStats();
       fetchRides();
       fetchPlatformWallet();
+      fetchDriverWallets();
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [fetchStats, fetchUsers, fetchRides, fetchPlatformWallet]);
+  }, [fetchStats, fetchUsers, fetchRides, fetchPlatformWallet, fetchDriverWallets, fetchPaymentHistory]);
 
   const handleToggleUserStatus = async (userId) => {
     try {
@@ -139,27 +180,35 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4 md:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6 border border-black rounded-none h-auto p-0">
+          <TabsList className="grid w-full grid-cols-4 mb-6 border border-black rounded-none h-auto p-0">
             <TabsTrigger 
               value="overview" 
-              className="rounded-none py-3 font-bold data-[state=active]:bg-[#FFBE00] data-[state=active]:text-black"
+              className="rounded-none py-3 font-bold data-[state=active]:bg-[#FFBE00] data-[state=active]:text-black text-sm"
               data-testid="tab-overview"
             >
               Vue d'ensemble
             </TabsTrigger>
             <TabsTrigger 
               value="users" 
-              className="rounded-none py-3 font-bold data-[state=active]:bg-[#FFBE00] data-[state=active]:text-black"
+              className="rounded-none py-3 font-bold data-[state=active]:bg-[#FFBE00] data-[state=active]:text-black text-sm"
               data-testid="tab-users"
             >
               Utilisateurs
             </TabsTrigger>
             <TabsTrigger 
               value="rides" 
-              className="rounded-none py-3 font-bold data-[state=active]:bg-[#FFBE00] data-[state=active]:text-black"
+              className="rounded-none py-3 font-bold data-[state=active]:bg-[#FFBE00] data-[state=active]:text-black text-sm"
               data-testid="tab-rides"
             >
               Courses
+            </TabsTrigger>
+            <TabsTrigger 
+              value="payments" 
+              className="rounded-none py-3 font-bold data-[state=active]:bg-[#FFBE00] data-[state=active]:text-black text-sm"
+              data-testid="tab-payments"
+            >
+              <CreditCard className="w-4 h-4 mr-1 inline" />
+              Paiements
             </TabsTrigger>
           </TabsList>
 
@@ -434,7 +483,188 @@ const AdminDashboard = () => {
               </div>
             </div>
           </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments" data-testid="payments-content">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              <div className="brutalist-card bg-white p-4">
+                <p className="text-xs text-gray-600 uppercase mb-1">Total à payer</p>
+                <p className="font-['Outfit'] font-black text-2xl text-red-600">
+                  {driverWallets.reduce((sum, d) => sum + d.wallet_balance, 0).toLocaleString()} <span className="text-sm">FCFA</span>
+                </p>
+              </div>
+              <div className="brutalist-card bg-white p-4">
+                <p className="text-xs text-gray-600 uppercase mb-1">Chauffeurs en attente</p>
+                <p className="font-['Outfit'] font-black text-2xl">
+                  {driverWallets.filter(d => d.wallet_balance > 0).length}
+                </p>
+              </div>
+              <div className="brutalist-card bg-white p-4">
+                <p className="text-xs text-gray-600 uppercase mb-1">Total versé</p>
+                <p className="font-['Outfit'] font-black text-2xl text-green-600">
+                  {driverWallets.reduce((sum, d) => sum + d.total_withdrawn, 0).toLocaleString()} <span className="text-sm">FCFA</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Driver Wallets Table */}
+            <div className="brutalist-card bg-white mb-6">
+              <div className="p-4 border-b border-black">
+                <h3 className="font-['Outfit'] font-bold text-lg">PORTEFEUILLES DES CHAUFFEURS</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100 border-b border-black">
+                    <tr>
+                      <th className="text-left p-4 font-bold">Chauffeur</th>
+                      <th className="text-left p-4 font-bold">Courses</th>
+                      <th className="text-left p-4 font-bold">Solde</th>
+                      <th className="text-left p-4 font-bold">Total gagné</th>
+                      <th className="text-left p-4 font-bold">Déjà versé</th>
+                      <th className="text-left p-4 font-bold">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {driverWallets.map((driver) => (
+                      <tr key={driver.user_id} className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-200 border border-black flex items-center justify-center">
+                              <User className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{driver.name}</p>
+                              <p className="text-xs text-gray-500">{driver.phone || driver.email}</p>
+                            </div>
+                            {driver.is_online && (
+                              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 font-medium">{driver.total_rides}</td>
+                        <td className="p-4">
+                          <span className={`font-bold ${driver.wallet_balance > 0 ? "text-red-600" : "text-gray-400"}`}>
+                            {driver.wallet_balance.toLocaleString()} FCFA
+                          </span>
+                        </td>
+                        <td className="p-4 text-gray-600">{driver.total_earnings.toLocaleString()} FCFA</td>
+                        <td className="p-4 text-green-600 font-medium">{driver.total_withdrawn.toLocaleString()} FCFA</td>
+                        <td className="p-4">
+                          {driver.wallet_balance > 0 ? (
+                            <button
+                              onClick={() => { setPayingDriver(driver); setPayAmount(String(driver.wallet_balance)); }}
+                              className="bg-[#FFBE00] border border-black px-4 py-2 font-bold text-sm hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                              data-testid={`pay-driver-${driver.user_id}`}
+                            >
+                              PAYER
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Rien à payer</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {driverWallets.length === 0 && (
+                  <div className="p-8 text-center text-gray-500">Aucun chauffeur inscrit</div>
+                )}
+              </div>
+            </div>
+
+            {/* Payment History */}
+            <div className="brutalist-card bg-white">
+              <div className="p-4 border-b border-black">
+                <h3 className="font-['Outfit'] font-bold text-lg">HISTORIQUE DES PAIEMENTS</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100 border-b border-black">
+                    <tr>
+                      <th className="text-left p-4 font-bold">Date</th>
+                      <th className="text-left p-4 font-bold">Chauffeur</th>
+                      <th className="text-left p-4 font-bold">Montant</th>
+                      <th className="text-left p-4 font-bold">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentHistory.map((payment) => (
+                      <tr key={payment.payment_id} className="border-b border-gray-200">
+                        <td className="p-4 text-sm">{new Date(payment.created_at).toLocaleString()}</td>
+                        <td className="p-4 font-medium">{payment.driver_name}</td>
+                        <td className="p-4 font-bold text-green-600">{payment.amount.toLocaleString()} FCFA</td>
+                        <td className="p-4">
+                          <span className="status-badge status-online">Payé</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {paymentHistory.length === 0 && (
+                  <div className="p-8 text-center text-gray-500">Aucun paiement effectué</div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
+
+      {/* Payment Modal */}
+      {payingDriver && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="payment-modal">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setPayingDriver(null)}></div>
+          <div className="relative bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 w-full max-w-md mx-4">
+            <button onClick={() => setPayingDriver(null)} className="absolute top-3 right-3">
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="font-['Outfit'] font-bold text-xl mb-4">PAYER LE CHAUFFEUR</h3>
+            
+            <div className="brutalist-card p-4 mb-4 bg-gray-50">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 bg-black flex items-center justify-center">
+                  <User className="w-6 h-6 text-[#FFBE00]" />
+                </div>
+                <div>
+                  <p className="font-bold">{payingDriver.name}</p>
+                  <p className="text-sm text-gray-500">{payingDriver.phone || payingDriver.email}</p>
+                </div>
+              </div>
+              <div className="flex justify-between text-sm mt-3 pt-3 border-t border-gray-200">
+                <span className="text-gray-600">Solde disponible</span>
+                <span className="font-bold">{payingDriver.wallet_balance.toLocaleString()} FCFA</span>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Montant à payer (FCFA)</label>
+              <input
+                type="number"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+                max={payingDriver.wallet_balance}
+                className="w-full p-3 border-2 border-black font-bold text-lg focus:border-[#FFBE00] focus:outline-none"
+                data-testid="pay-amount-input"
+              />
+              <button
+                onClick={() => setPayAmount(String(payingDriver.wallet_balance))}
+                className="mt-1 text-sm text-[#FFBE00] font-medium underline"
+              >
+                Tout payer ({payingDriver.wallet_balance.toLocaleString()} FCFA)
+              </button>
+            </div>
+            
+            <button
+              onClick={handlePayDriver}
+              disabled={!payAmount || parseFloat(payAmount) <= 0 || parseFloat(payAmount) > payingDriver.wallet_balance}
+              className="w-full bg-[#FFBE00] border-2 border-black py-3 font-bold text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all disabled:opacity-50"
+              data-testid="confirm-pay-btn"
+            >
+              CONFIRMER LE PAIEMENT
+            </button>
+          </div>
+        </div>
+      )}
       </main>
 
       {/* Side Menu */}

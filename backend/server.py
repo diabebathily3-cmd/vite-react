@@ -1327,6 +1327,101 @@ async def toggle_user_status(user_id: str, user: dict = Depends(get_current_user
     
     return {"user_id": user_id, "is_active": new_status}
 
+@api_router.get("/admin/drivers/wallets")
+async def get_driver_wallets(user: dict = Depends(get_current_user)):
+    """Get all driver wallets for admin payment management"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    
+    drivers = await db.users.find(
+        {"role": "driver"}, 
+        {"_id": 0, "password": 0}
+    ).to_list(100)
+    
+    driver_ids = [d["user_id"] for d in drivers]
+    wallets = await db.wallets.find(
+        {"user_id": {"$in": driver_ids}}, {"_id": 0}
+    ).to_list(100)
+    wallet_map = {w["user_id"]: w for w in wallets}
+    
+    result = []
+    for driver in drivers:
+        wallet = wallet_map.get(driver["user_id"], {})
+        result.append({
+            "user_id": driver["user_id"],
+            "name": driver.get("name", ""),
+            "email": driver.get("email", ""),
+            "phone": driver.get("phone", ""),
+            "total_rides": driver.get("total_rides", 0),
+            "rating": driver.get("rating", 5.0),
+            "wallet_balance": wallet.get("balance", 0),
+            "total_earnings": wallet.get("total_earnings", 0),
+            "total_withdrawn": wallet.get("total_withdrawn", 0),
+            "is_online": driver.get("is_online", False)
+        })
+    
+    return result
+
+@api_router.post("/admin/drivers/{driver_id}/pay")
+async def pay_driver(driver_id: str, payment: dict, user: dict = Depends(get_current_user)):
+    """Admin pays a driver (marks payment as processed)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    
+    amount = payment.get("amount", 0)
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Montant invalide")
+    
+    wallet = await db.wallets.find_one({"user_id": driver_id})
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Portefeuille non trouvé")
+    
+    if amount > wallet.get("balance", 0):
+        raise HTTPException(status_code=400, detail="Solde insuffisant")
+    
+    # Deduct from wallet
+    await db.wallets.update_one(
+        {"user_id": driver_id},
+        {"$inc": {"balance": -amount, "total_withdrawn": amount}}
+    )
+    
+    # Record the payment transaction
+    await db.wallet_transactions.insert_one({
+        "transaction_id": f"tx_{uuid.uuid4().hex[:12]}",
+        "user_id": driver_id,
+        "type": "withdrawal",
+        "amount": amount,
+        "description": f"Paiement par l'admin",
+        "processed_by": user["user_id"],
+        "status": "completed",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Record in admin payments collection
+    driver = await db.users.find_one({"user_id": driver_id}, {"_id": 0, "password": 0})
+    await db.admin_payments.insert_one({
+        "payment_id": f"pay_{uuid.uuid4().hex[:12]}",
+        "driver_id": driver_id,
+        "driver_name": driver.get("name", ""),
+        "amount": amount,
+        "processed_by": user["user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    logger.info(f"Admin paid driver {driver_id}: {amount} FCFA")
+    return {"status": "success", "message": f"Paiement de {int(amount)} FCFA effectué", "amount": amount}
+
+@api_router.get("/admin/payments/history")
+async def get_payment_history(user: dict = Depends(get_current_user)):
+    """Get admin payment history"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    
+    payments = await db.admin_payments.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return payments
+
+
+
 # ====================== HEALTH CHECK ======================
 
 @api_router.get("/")

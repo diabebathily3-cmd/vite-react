@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, MapPin, Clock, CreditCard, Star, MessageCircle, 
-  History, Menu, X, LogOut, User, Navigation, Phone, UserCircle, Bike
+  History, Menu, X, LogOut, User, Navigation, Phone, UserCircle, Bike, Bell
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
 import PassengerProfile from "./Profile";
@@ -82,6 +82,16 @@ const PassengerDashboard = () => {
   const [newMessage, setNewMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
 
+  // Notification state
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifAudioRef = useRef(null);
+
+  useEffect(() => {
+    notifAudioRef.current = new Audio("/notification.wav");
+    notifAudioRef.current.volume = 0.7;
+  }, []);
+
   // Bamako locations for demo
   const bamakoLocations = [
     { name: "ACI 2000", lat: 12.6461, lng: -7.9925 },
@@ -105,6 +115,27 @@ const PassengerDashboard = () => {
           // Driver found! Switch to active view
           if (!prevRide?.driver_id) {
             toast.success("Chauffeur trouvé !");
+            try { notifAudioRef.current?.play(); } catch(e) {}
+            setNotifications(prev => [{
+              id: Date.now(),
+              type: "driver_found",
+              message: `${response.data.driver?.name || "Un chauffeur"} a accepté votre course`,
+              time: new Date()
+            }, ...prev]);
+          }
+          // Notify on status changes
+          if (prevRide && prevRide.status !== response.data.status) {
+            const statusMessages = {
+              arrived: "Votre chauffeur est arrivé !",
+              in_progress: "Votre course est en cours",
+              completed: "Course terminée ! Merci"
+            };
+            const msg = statusMessages[response.data.status];
+            if (msg) {
+              try { notifAudioRef.current?.play(); } catch(e) {}
+              toast.success(msg);
+              setNotifications(prev => [{ id: Date.now(), type: response.data.status, message: msg, time: new Date() }, ...prev]);
+            }
           }
           setBookingStep("active");
           fetchMessages(response.data.ride_id);
@@ -273,13 +304,54 @@ const PassengerDashboard = () => {
           <span className="font-['Outfit'] font-black text-base tracking-tight">SIRA <span className="text-[#FFBE00]">TAXI</span></span>
         </div>
         
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="p-2 border border-black hover:bg-gray-50"
-          data-testid="menu-btn"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Notification Bell */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2 border border-black relative"
+              data-testid="passenger-notification-bell"
+            >
+              <Bell className={`w-5 h-5 ${notifications.length > 0 ? "text-[#FFBE00]" : "text-gray-600"}`} />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full" data-testid="passenger-notif-badge">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 top-12 w-72 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 max-h-80 overflow-y-auto" data-testid="passenger-notif-dropdown">
+                <div className="p-3 border-b-2 border-black bg-[#FFBE00]">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-sm">NOTIFICATIONS</p>
+                    {notifications.length > 0 && (
+                      <button onClick={() => setNotifications([])} className="text-xs font-medium underline">Effacer</button>
+                    )}
+                  </div>
+                </div>
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500 text-sm">Aucune notification</div>
+                ) : (
+                  notifications.map(notif => (
+                    <div key={notif.id} className="p-3 border-b border-gray-100">
+                      <p className="text-sm font-medium">{notif.message}</p>
+                      <p className="text-xs text-gray-400 mt-1">{new Date(notif.time).toLocaleTimeString()}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="p-2 border border-black hover:bg-gray-50"
+            data-testid="menu-btn"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       {/* Map Area */}

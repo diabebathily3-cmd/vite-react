@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, MapPin, Clock, DollarSign, Star, MessageCircle, 
-  Power, Menu, X, LogOut, User, Navigation, Check, Phone, UserCircle, Wallet, Bike
+  Power, Menu, X, LogOut, User, Navigation, Check, Phone, UserCircle, Wallet, Bike, Bell
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
 import DriverProfile from "./Profile";
@@ -61,6 +61,17 @@ const DriverDashboard = () => {
   const [newMessage, setNewMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
 
+  // Notifications
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [hasNewRides, setHasNewRides] = useState(false);
+  const prevPendingCountRef = useRef(0);
+  const notifAudioRef = useRef(null);
+
+  useEffect(() => {
+    notifAudioRef.current = new Audio("/notification.wav");
+    notifAudioRef.current.volume = 0.7;
+  }, []);
+
   const activeRideRef = useRef(activeRide);
   useEffect(() => {
     activeRideRef.current = activeRide;
@@ -90,7 +101,17 @@ const DriverDashboard = () => {
     if (!isOnline) return;
     try {
       const response = await axios.get(`${API}/rides/pending`);
-      setPendingRides(response.data);
+      const newRides = response.data;
+      // Detect new rides and play notification
+      if (newRides.length > prevPendingCountRef.current && prevPendingCountRef.current >= 0) {
+        setHasNewRides(true);
+        try { notifAudioRef.current?.play(); } catch(e) {}
+        if (newRides.length > 0) {
+          toast.success(`${newRides.length - prevPendingCountRef.current} nouvelle(s) course(s) disponible(s) !`);
+        }
+      }
+      prevPendingCountRef.current = newRides.length;
+      setPendingRides(newRides);
     } catch (error) {
       console.error("Error fetching pending rides:", error);
     }
@@ -271,6 +292,53 @@ const DriverDashboard = () => {
             <Power className="w-4 h-4" />
             {isOnline ? "EN LIGNE" : "HORS LIGNE"}
           </button>
+          
+          {/* Notification Bell */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowNotifications(!showNotifications); setHasNewRides(false); }}
+              className={`p-2 border border-[#FFBE00] relative ${hasNewRides ? "animate-bounce" : ""}`}
+              data-testid="notification-bell-btn"
+            >
+              <Bell className={`w-5 h-5 ${hasNewRides ? "text-[#FFBE00]" : "text-white"}`} />
+              {pendingRides.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full" data-testid="notification-badge">
+                  {pendingRides.length}
+                </span>
+              )}
+            </button>
+
+            {/* Notification Dropdown */}
+            {showNotifications && (
+              <div className="absolute right-0 top-12 w-80 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 max-h-96 overflow-y-auto" data-testid="notification-dropdown">
+                <div className="p-3 border-b-2 border-black bg-[#FFBE00]">
+                  <p className="font-bold text-sm">COURSES DISPONIBLES ({pendingRides.length})</p>
+                </div>
+                {pendingRides.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500 text-sm">Aucune course disponible</div>
+                ) : (
+                  pendingRides.map(ride => (
+                    <div key={ride.ride_id} className="p-3 border-b border-gray-200 hover:bg-gray-50" data-testid="notification-ride-item">
+                      <div className="flex items-center gap-2 mb-1">
+                        {ride.vehicle_type === "moto" ? <Bike className="w-4 h-4 text-orange-600" /> : <Car className="w-4 h-4 text-blue-600" />}
+                        <span className="font-bold text-sm">{ride.vehicle_type === "moto" ? "MOTO" : "TAXI"}</span>
+                        <span className="ml-auto font-bold text-[#FFBE00]">{ride.estimated_price?.toLocaleString()} FCFA</span>
+                      </div>
+                      <p className="text-xs text-gray-600 flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full inline-block"></span> {ride.pickup_location?.address}</p>
+                      <p className="text-xs text-gray-600 flex items-center gap-1"><span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span> {ride.dropoff_location?.address}</p>
+                      <button
+                        onClick={() => { handleAcceptRide(ride.ride_id); setShowNotifications(false); }}
+                        className="mt-2 w-full bg-[#FFBE00] border border-black py-1.5 font-bold text-sm hover:bg-yellow-400"
+                        data-testid="notif-accept-btn"
+                      >
+                        ACCEPTER
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           
           <button
             onClick={() => setMenuOpen(true)}
