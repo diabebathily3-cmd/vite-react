@@ -1,0 +1,93 @@
+{
+  "project": "MaliRide Mobility Platform",
+  "theme_archetype": {
+    "theme": "Light",
+    "archetype": "Archetype 4: Swiss & High-Contrast",
+    "rationale": "For a mobility/taxi app in Mali, maximum readability under harsh sunlight is paramount. Swiss Brutalism provides functional clarity, while a high-contrast stark palette (Black, White, Signal Yellow) signals authority and speed, breaking away from the generic 'Uber black/white' or 'Fintech blue' norms."
+  },
+  "colors": {
+    "background": "#FFFFFF",
+    "surface": "#F4F4F5",
+    "primary": "#FFBE00",
+    "primary_foreground": "#000000",
+    "secondary": "#0A0A0A",
+    "secondary_foreground": "#FFFFFF",
+    "border": "#000000",
+    "muted": "#E4E4E7",
+    "accent": "#FF3B30",
+    "text_primary": "#000000",
+    "text_secondary": "#52525B"
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "IBM Plex Sans",
+    "scale": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter font-black",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-bold",
+      "body": "text-base leading-relaxed font-medium"
+    },
+    "rules": [
+      "No generic sans (Inter/Roboto) for headings.",
+      "Overlines MUST be uppercase, tiny, wide spacing (tracking-[0.2em]).",
+      "Radical weight contrast: pair font-black headings with font-light or regular body text."
+    ]
+  },
+  "surfaces": {
+    "general": "Neo-Brutalist utility. Flat solid backgrounds with 1px solid black borders. NO soft shadows. Use hard drop shadows for elevation (e.g., shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]).",
+    "app_bottom_sheets": "Stark white, 1px black top border, square corners (rounded-none).",
+    "admin_cards": "Flat, 1px border-black, no radius."
+  },
+  "spacing_and_layout": {
+    "general_spacing": "Generous scaling. p-6 or p-8 inside bordered containers.",
+    "admin_dashboard": "Control Room Grid. Base grid-cols-1 md:grid-cols-4. Tight gap-4. Every pixel utilized. h-full on children.",
+    "passenger_driver_app": "Map is the hero (full bleed). Interaction happens via bottom sheets/drawers and floating action buttons. floating elements must have high-contrast hard shadows."
+  },
+  "components": {
+    "general": "Use pure HTML/Tailwind for layouts. Shadcn for interactive logic (Forms, Drawers, Dialogs).",
+    "overrides": "Strip default Vercel border radii. Force rounded-none or max rounded-sm on all Shadcn components. Override default muted grays with pure high-contrast black/white.",
+    "icons": "Use @phosphor-icons/react for bold, technical iconography. Ensure to install via yarn.",
+    "maps": "Integrate real-time maps. Map UI components should float over the map using 'Crystal Glass' if scrolled under, or Solid Pure White with black borders."
+  },
+  "motion": {
+    "interactions": "Snappy, fast micro-interactions. Zero lag for the driver app.",
+    "hover_states": "ALWAYS explicitly set text color on hover. Example: hover:bg-black hover:text-white transition-colors duration-200."
+  },
+  "media_and_images": {
+    "hero_graphic": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/70074c40-f177-4ede-9853-4ea5d897762e/images/3d243c33f10e5b2824644666434469a711961cddca7e19aa186fd22e6e1031f2.png",
+      "context": "Main visual for marketing landing page."
+    },
+    "city_map_bg": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/70074c40-f177-4ede-9853-4ea5d897762e/images/8637e0ebdb64067a6d7e3cf7ad306389b15eb171499406c21b254a285c89925d.png",
+      "context": "Abstract background texture for login/auth screens or admin header."
+    },
+    "driver_app_promo": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/70074c40-f177-4ede-9853-4ea5d897762e/images/94d77cd570da0701055b6bbb1395aeb4d7cba7270c755d34dbdec96be277ee52.png",
+      "context": "Feature highlight for the Driver earnings & navigation showcase."
+    },
+    "local_context_bamako": {
+      "url": "https://images.pexels.com/photos/33275026/pexels-photo-33275026.jpeg",
+      "context": "Passenger onboarding or location context graphic."
+    },
+    "driver_portrait_1": {
+      "url": "https://images.pexels.com/photos/31101760/pexels-photo-31101760.png",
+      "context": "Driver profile placeholder or review section."
+    },
+    "driver_portrait_2": {
+      "url": "https://images.pexels.com/photos/31064777/pexels-photo-31064777.png",
+      "context": "Driver profile placeholder or review section."
+    }
+  },
+  "testing": {
+    "rules": "All interactive and key informational elements MUST include a data-testid attribute. Use kebab-case, role-based naming (e.g., data-testid='driver-accept-ride-button')."
+  },
+  "instructions_to_main_agent": [
+    "You are building a hybrid fullstack app with a mobile-first Passenger/Driver interface and a dense Admin Dashboard.",
+    "Adhere STRICTLY to the Swiss Brutalist archetype: extreme contrast, 1px black borders, no soft shadows, hard geometrical edges.",
+    "Never use the default generic SaaS blue or Inter font. Use #FFBE00 (Signal Yellow) for primary CTAs.",
+    "For the Passenger and Driver maps, make the map view edge-to-edge (full viewport). Overlay interactive elements as floating 'Neo-Brutalist' cards (white bg, sharp black border, offset solid shadow).",
+    "Install and use @phosphor-icons/react.",
+    "Do not use Shadcn card components straight out of the box without applying the brutalist overrides (rounded-none, border-black).",
+    "For mobile flows, heavily rely on Shadcn's Drawer component acting as bottom sheets, styled flat and sharp."
+  ]
+}
