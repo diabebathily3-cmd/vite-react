@@ -135,15 +135,58 @@ const PassengerDashboard = () => {
   // Notification state
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const notifAudioRef = useRef(null);
+  const audioCtxRef = useRef(null);
   
   // GPS state
   const [myLocation, setMyLocation] = useState(null);
 
+  // Initialize AudioContext on first user interaction
   useEffect(() => {
-    notifAudioRef.current = new Audio("/passenger_alert.wav");
-    notifAudioRef.current.volume = 1.0;
+    const initOnInteraction = () => {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume();
+    };
+    document.addEventListener("click", initOnInteraction, { once: true });
+    document.addEventListener("touchstart", initOnInteraction, { once: true });
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+    return () => {
+      document.removeEventListener("click", initOnInteraction);
+      document.removeEventListener("touchstart", initOnInteraction);
+    };
   }, []);
+
+  const playPassengerAlert = () => {
+    try {
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const gain = ctx.createGain();
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.7, now);
+
+      const notes = [784, 1047, 1175];
+      const durs = [0.2, 0.25, 0.3];
+      let t = now;
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g);
+        g.connect(gain);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.7, t);
+        g.gain.exponentialRampToValueAtTime(0.01, t + durs[i]);
+        osc.start(t);
+        osc.stop(t + durs[i]);
+        t += durs[i] + 0.08;
+      });
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    } catch (e) {}
+  };
 
   // Get user's GPS position
   useEffect(() => {
@@ -184,13 +227,17 @@ const PassengerDashboard = () => {
           // Driver found! Switch to active view
           if (!prevRide?.driver_id) {
             toast.success("Chauffeur trouvé !");
-            try { notifAudioRef.current?.play(); } catch(e) {}
+            try { playPassengerAlert(); } catch(e) {}
             setNotifications(prev => [{
               id: Date.now(),
               type: "driver_found",
               message: `${response.data.driver?.name || "Un chauffeur"} a accepté votre course`,
               time: new Date()
             }, ...prev]);
+            // Browser notification
+            if ("Notification" in window && Notification.permission === "granted") {
+              try { new Notification("SIRA TAXI", { body: "Chauffeur trouvé !", icon: "/logo192.png", vibrate: [200, 100, 200] }); } catch(e) {}
+            }
           }
           // Notify on status changes
           if (prevRide && prevRide.status !== response.data.status) {
@@ -201,7 +248,7 @@ const PassengerDashboard = () => {
             };
             const msg = statusMessages[response.data.status];
             if (msg) {
-              try { notifAudioRef.current?.play(); } catch(e) {}
+              try { playPassengerAlert(); } catch(e) {}
               toast.success(msg);
               setNotifications(prev => [{ id: Date.now(), type: response.data.status, message: msg, time: new Date() }, ...prev]);
             }

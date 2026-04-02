@@ -133,27 +133,107 @@ const DriverDashboard = () => {
   const [hasNewRides, setHasNewRides] = useState(false);
   const [ringing, setRinging] = useState(false);
   const prevPendingCountRef = useRef(0);
-  const notifAudioRef = useRef(null);
   const ringIntervalRef = useRef(null);
+  const audioCtxRef = useRef(null);
 
   // GPS state
   const [myLocation, setMyLocation] = useState(null);
 
   useEffect(() => {
-    notifAudioRef.current = new Audio("/ride_alert.wav");
-    notifAudioRef.current.volume = 1.0;
+    // Request notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
     return () => {
       if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
     };
   }, []);
 
+  // Initialize AudioContext on user interaction (required by browsers)
+  const initAudio = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+  };
+
+  // Play loud alert using Web Audio API (works on mobile)
+  const playAlertSound = () => {
+    try {
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+      const gain = ctx.createGain();
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.9, now);
+
+      // 3 ascending tones - LOUD
+      const freqs = [880, 1100, 1320];
+      const durations = [0.18, 0.18, 0.3];
+      let t = now;
+
+      freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.connect(oscGain);
+        oscGain.connect(gain);
+        osc.type = "square"; // Square wave = louder + more piercing
+        osc.frequency.setValueAtTime(freq, t);
+        oscGain.gain.setValueAtTime(0.8, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, t + durations[i]);
+        osc.start(t);
+        osc.stop(t + durations[i]);
+        t += durations[i] + 0.06;
+      });
+
+      // Second repeat higher
+      const freqs2 = [1100, 1320, 1568];
+      freqs2.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.connect(oscGain);
+        oscGain.connect(gain);
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, t);
+        oscGain.gain.setValueAtTime(0.9, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, t + durations[i]);
+        osc.start(t);
+        osc.stop(t + durations[i]);
+        t += durations[i] + 0.06;
+      });
+
+      // Vibrate phone
+      if (navigator.vibrate) {
+        navigator.vibrate([300, 100, 300, 100, 500]);
+      }
+    } catch (e) {
+      console.log("Audio error:", e);
+    }
+  };
+
   const startRinging = () => {
     setRinging(true);
-    try { notifAudioRef.current?.play(); } catch(e) {}
-    // Repeat every 4 seconds until stopped
+    playAlertSound();
+    // Repeat every 3 seconds until stopped
     ringIntervalRef.current = setInterval(() => {
-      try { notifAudioRef.current?.play(); } catch(e) {}
-    }, 4000);
+      playAlertSound();
+    }, 3000);
+
+    // Browser push notification
+    if ("Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification("SIRA TAXI", {
+          body: "Nouvelle course disponible !",
+          icon: "/logo192.png",
+          tag: "new-ride",
+          requireInteraction: true,
+          vibrate: [300, 100, 300, 100, 500]
+        });
+      } catch (e) {}
+    }
   };
 
   const stopRinging = () => {
@@ -162,8 +242,7 @@ const DriverDashboard = () => {
       clearInterval(ringIntervalRef.current);
       ringIntervalRef.current = null;
     }
-    notifAudioRef.current?.pause();
-    if (notifAudioRef.current) notifAudioRef.current.currentTime = 0;
+    if (navigator.vibrate) navigator.vibrate(0);
   };
 
   // Get driver's GPS position and send to backend
@@ -289,11 +368,18 @@ const DriverDashboard = () => {
 
   const toggleOnlineStatus = async () => {
     try {
+      // Initialize audio on user gesture (required by browsers)
+      initAudio();
+      
       const response = await axios.put(`${API}/users/status`);
       setIsOnline(response.data.is_online);
-      toast.success(response.data.is_online ? "Vous êtes maintenant en ligne" : "Vous êtes maintenant hors ligne");
+      toast.success(response.data.is_online ? "Vous êtes maintenant en ligne — les notifications sont activées" : "Vous êtes maintenant hors ligne");
       if (response.data.is_online) {
+        // Play a quick test beep so user knows sound works
+        playAlertSound();
         fetchPendingRides();
+      } else {
+        stopRinging();
       }
     } catch (error) {
       toast.error("Erreur lors du changement de statut");
