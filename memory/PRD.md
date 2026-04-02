@@ -46,6 +46,7 @@ Application de transport (ride-hailing) comme Uber pour les taxis au Mali avec t
 16. **GPS & Carte OpenStreetMap** - Remplacement des cartes statiques par de vraies cartes interactives Leaflet/OpenStreetMap. Géolocalisation native du navigateur (watchPosition). Marqueurs colorés: vert=pickup, rouge=dropoff, bleu=passager, jaune=chauffeur. Position envoyée au backend via PUT /api/users/location. Carte centrée sur Bamako par défaut.
 17. **Pages de connexion distinctes** - Écran de choix initial "JE SUIS PASSAGER" / "JE SUIS CHAUFFEUR". Formulaire passager: fond blanc, badge "ESPACE PASSAGER", Google Login. Formulaire chauffeur: fond noir, bordure dorée, badge "ESPACE CHAUFFEUR", sans Google Login. Bouton "Changer de mode" pour revenir au choix.
 18. **Modification mot de passe** - Section collapsible dans les profils passager et chauffeur. Champs: mot de passe actuel, nouveau, confirmation. Toggle visibilité (icône oeil). Validation frontend + backend (6 chars min, vérification mot de passe actuel). Endpoint PUT /api/users/password.
+19. **Sonnerie notification courses** - ride_alert.wav (alerte urgente 3 tons, boucle toutes les 4s) pour chauffeurs quand une course arrive. passenger_alert.wav (carillon agréable) pour passagers quand le chauffeur accepte/change de statut. Banner jaune pulsant "NOUVELLE COURSE DISPONIBLE !" avec bouton ARRÊTER. La sonnerie s'arrête à l'acceptation, clic cloche, ou clic ARRÊTER.
 
 ## Architecture
 ```
