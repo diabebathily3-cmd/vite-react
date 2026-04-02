@@ -39,6 +39,7 @@ Application de transport (ride-hailing) comme Uber pour les taxis au Mali avec t
 9. Logo visibility enhancement - Logo prominent on all pages
 10. PWA setup - manifest.json, service-worker.js, icons, favicon, install banner
 11. **Page Contact / À propos** - Formulaire de contact (POST /api/contact), coordonnées (contact@sirataxi.ml), section À propos, liens header + footer
+12. **Bug fix: course bloquée** - Correction fetchActiveRide (stale closure, état incorrect pour rides pending), suppression polling redondant, padding bottom sheet (pb-14) pour boutons visibles sur mobile
 
 ## Architecture
 ```
