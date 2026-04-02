@@ -42,8 +42,15 @@ const LandingPage = () => {
               ) : (
                 <>
                   <button
+                    onClick={() => navigate("/contact")}
+                    className="font-medium text-white hover:text-[#FFBE00] transition-colors"
+                    data-testid="contact-link"
+                  >
+                    Contact
+                  </button>
+                  <button
                     onClick={() => navigate("/auth")}
-                    className="font-medium text-white hover:text-[#FFBE00]"
+                    className="font-medium text-white hover:text-[#FFBE00] transition-colors"
                     data-testid="login-link"
                   >
                     Connexion
@@ -233,9 +240,18 @@ const LandingPage = () => {
               <img src={LOGO_URL} alt="SIRA TAXI" className="h-12 w-auto" />
               <span className="font-['Outfit'] font-black text-lg text-white">SIRA <span className="text-[#FFBE00]">TAXI</span></span>
             </div>
-            <p className="text-sm text-gray-500">
-              © 2025 SIRA TAXI. Tous droits réservés. Bamako, Mali
-            </p>
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => navigate("/contact")}
+                className="text-sm text-gray-400 hover:text-[#FFBE00] transition-colors font-medium"
+                data-testid="footer-contact-link"
+              >
+                Contact
+              </button>
+              <span className="text-sm text-gray-500">
+                © 2025 SIRA TAXI. Bamako, Mali
+              </span>
+            </div>
           </div>
         </div>
       </footer>

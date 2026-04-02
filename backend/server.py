@@ -814,6 +814,32 @@ async def get_ride_history(user: dict = Depends(get_current_user)):
     
     return rides
 
+
+# ====================== CONTACT ROUTES ======================
+
+class ContactMessage(BaseModel):
+    name: str
+    email: EmailStr
+    subject: str
+    message: str
+
+@api_router.post("/contact")
+async def submit_contact(msg: ContactMessage):
+    """Submit a contact form message"""
+    contact = {
+        "contact_id": str(uuid.uuid4()),
+        "name": msg.name,
+        "email": msg.email,
+        "subject": msg.subject,
+        "message": msg.message,
+        "status": "new",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.contact_messages.insert_one(contact)
+    logger.info(f"New contact message from {msg.email}: {msg.subject}")
+    return {"status": "success", "message": "Message reçu avec succès"}
+
+
 # ====================== CHAT ROUTES ======================
 
 @api_router.post("/chat/{ride_id}")

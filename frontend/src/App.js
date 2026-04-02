@@ -6,6 +6,7 @@ import { Toaster, toast } from "sonner";
 // Pages
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
+import ContactPage from "./pages/ContactPage";
 import PassengerDashboard from "./pages/passenger/Dashboard";
 import DriverDashboard from "./pages/driver/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -144,6 +145,7 @@ function AppRouter() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/contact" element={<ContactPage />} />
       
       {/* Passenger Routes */}
       <Route
