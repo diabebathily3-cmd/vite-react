@@ -634,35 +634,41 @@ async def update_ride_status(ride_id: str, status: dict, user: dict = Depends(ge
     
     update_data = {"status": new_status}
     
+    # Platform commission rate (15%)
+    PLATFORM_COMMISSION_RATE = 0.15
+    
     if new_status == "completed":
         update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
         update_data["final_price"] = ride["estimated_price"]
         
+        total_price = ride["estimated_price"]
+        platform_commission = round(total_price * PLATFORM_COMMISSION_RATE, 0)
+        driver_earnings = total_price - platform_commission
+        
         # Update driver earnings and wallet
         if ride.get("driver_id"):
             driver_id = ride["driver_id"]
-            ride_earnings = ride["estimated_price"]
             
             # Update user earnings
             await db.users.update_one(
                 {"user_id": driver_id},
                 {
                     "$inc": {
-                        "earnings": ride_earnings,
+                        "earnings": driver_earnings,
                         "total_rides": 1
                     }
                 }
             )
             
-            # Update or create wallet
+            # Update or create driver wallet
             wallet = await db.wallets.find_one({"user_id": driver_id})
             if wallet:
                 await db.wallets.update_one(
                     {"user_id": driver_id},
                     {
                         "$inc": {
-                            "balance": ride_earnings,
-                            "total_earnings": ride_earnings
+                            "balance": driver_earnings,
+                            "total_earnings": driver_earnings
                         }
                     }
                 )
@@ -670,24 +676,67 @@ async def update_ride_status(ride_id: str, status: dict, user: dict = Depends(ge
                 await db.wallets.insert_one({
                     "wallet_id": f"wallet_{uuid.uuid4().hex[:12]}",
                     "user_id": driver_id,
-                    "balance": ride_earnings,
-                    "total_earnings": ride_earnings,
+                    "balance": driver_earnings,
+                    "total_earnings": driver_earnings,
                     "total_withdrawn": 0,
                     "pending_withdrawal": 0,
                     "created_at": datetime.now(timezone.utc).isoformat()
                 })
             
-            # Create earning transaction
+            # Create earning transaction for driver
             await db.wallet_transactions.insert_one({
                 "transaction_id": f"tx_{uuid.uuid4().hex[:12]}",
                 "user_id": driver_id,
                 "type": "earning",
-                "amount": ride_earnings,
+                "amount": driver_earnings,
                 "description": f"Course {ride['pickup_location'].get('address', '')} → {ride['dropoff_location'].get('address', '')}",
                 "ride_id": ride_id,
                 "status": "completed",
                 "created_at": datetime.now(timezone.utc).isoformat()
             })
+        
+        # Update platform wallet (commission)
+        platform_wallet = await db.platform_wallet.find_one({"wallet_type": "platform"})
+        if platform_wallet:
+            await db.platform_wallet.update_one(
+                {"wallet_type": "platform"},
+                {
+                    "$inc": {
+                        "balance": platform_commission,
+                        "total_earnings": platform_commission,
+                        "total_commissions": platform_commission
+                    }
+                }
+            )
+        else:
+            await db.platform_wallet.insert_one({
+                "wallet_id": f"platform_{uuid.uuid4().hex[:12]}",
+                "wallet_type": "platform",
+                "balance": platform_commission,
+                "total_earnings": platform_commission,
+                "total_commissions": platform_commission,
+                "total_withdrawn": 0,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+        
+        # Create platform transaction
+        await db.platform_transactions.insert_one({
+            "transaction_id": f"ptx_{uuid.uuid4().hex[:12]}",
+            "type": "commission",
+            "amount": platform_commission,
+            "ride_id": ride_id,
+            "driver_id": ride.get("driver_id"),
+            "passenger_id": ride["passenger_id"],
+            "total_ride_price": total_price,
+            "commission_rate": PLATFORM_COMMISSION_RATE,
+            "description": f"Commission sur course {ride['pickup_location'].get('address', '')} → {ride['dropoff_location'].get('address', '')}",
+            "status": "completed",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Update ride with commission info
+        update_data["platform_commission"] = platform_commission
+        update_data["driver_earnings"] = driver_earnings
         
         # Update passenger ride count
         await db.users.update_one(
@@ -1001,6 +1050,157 @@ async def get_admin_stats(user: dict = Depends(get_current_user)):
         "completed_rides": completed_rides,
         "active_rides": active_rides,
         "total_revenue": total_revenue
+    }
+
+# ====================== PLATFORM WALLET ROUTES ======================
+
+@api_router.get("/admin/platform-wallet")
+async def get_platform_wallet(user: dict = Depends(get_current_user)):
+    """Get platform wallet info (admin only)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    
+    wallet = await db.platform_wallet.find_one({"wallet_type": "platform"}, {"_id": 0})
+    
+    if not wallet:
+        # Create platform wallet if not exists
+        wallet = {
+            "wallet_id": f"platform_{uuid.uuid4().hex[:12]}",
+            "wallet_type": "platform",
+            "balance": 0,
+            "total_earnings": 0,
+            "total_commissions": 0,
+            "total_withdrawn": 0,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.platform_wallet.insert_one(wallet)
+        wallet.pop("_id", None)
+    
+    return wallet
+
+@api_router.get("/admin/platform-wallet/stats")
+async def get_platform_wallet_stats(user: dict = Depends(get_current_user)):
+    """Get platform wallet statistics (admin only)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    
+    wallet = await db.platform_wallet.find_one({"wallet_type": "platform"}, {"_id": 0})
+    
+    if not wallet:
+        return {
+            "balance": 0,
+            "total_commissions": 0,
+            "total_withdrawn": 0,
+            "today_commissions": 0,
+            "week_commissions": 0,
+            "month_commissions": 0,
+            "commission_rate": 0.15
+        }
+    
+    # Calculate period commissions
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=now.weekday())
+    month_start = today_start.replace(day=1)
+    
+    all_commissions = await db.platform_transactions.find({
+        "type": "commission"
+    }, {"_id": 0}).to_list(10000)
+    
+    def parse_date(date_str):
+        try:
+            return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        except:
+            return datetime.min.replace(tzinfo=timezone.utc)
+    
+    today_commissions = sum(
+        t["amount"] for t in all_commissions 
+        if parse_date(t["created_at"]) >= today_start
+    )
+    
+    week_commissions = sum(
+        t["amount"] for t in all_commissions 
+        if parse_date(t["created_at"]) >= week_start
+    )
+    
+    month_commissions = sum(
+        t["amount"] for t in all_commissions 
+        if parse_date(t["created_at"]) >= month_start
+    )
+    
+    return {
+        "balance": wallet.get("balance", 0),
+        "total_commissions": wallet.get("total_commissions", 0),
+        "total_withdrawn": wallet.get("total_withdrawn", 0),
+        "today_commissions": today_commissions,
+        "week_commissions": week_commissions,
+        "month_commissions": month_commissions,
+        "commission_rate": 0.15
+    }
+
+@api_router.get("/admin/platform-wallet/transactions")
+async def get_platform_transactions(user: dict = Depends(get_current_user), limit: int = 100):
+    """Get platform transaction history (admin only)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    
+    transactions = await db.platform_transactions.find(
+        {},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(limit)
+    
+    return transactions
+
+@api_router.post("/admin/platform-wallet/withdraw")
+async def platform_withdrawal(withdrawal_data: dict, user: dict = Depends(get_current_user)):
+    """Request platform withdrawal (admin only)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    
+    wallet = await db.platform_wallet.find_one({"wallet_type": "platform"}, {"_id": 0})
+    
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Portefeuille plateforme non trouvé")
+    
+    amount = withdrawal_data.get("amount", 0)
+    
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Montant invalide")
+    
+    if amount > wallet["balance"]:
+        raise HTTPException(status_code=400, detail="Solde insuffisant")
+    
+    # Create withdrawal transaction
+    transaction_id = f"ptx_{uuid.uuid4().hex[:12]}"
+    transaction = {
+        "transaction_id": transaction_id,
+        "type": "withdrawal",
+        "amount": -amount,
+        "description": withdrawal_data.get("description", "Retrait plateforme"),
+        "method": withdrawal_data.get("method", "bank_transfer"),
+        "account": withdrawal_data.get("account", ""),
+        "requested_by": user["user_id"],
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.platform_transactions.insert_one(transaction)
+    
+    # Update wallet
+    await db.platform_wallet.update_one(
+        {"wallet_type": "platform"},
+        {
+            "$inc": {
+                "balance": -amount
+            }
+        }
+    )
+    
+    transaction.pop("_id", None)
+    return {
+        "message": "Demande de retrait soumise",
+        "transaction": transaction,
+        "new_balance": wallet["balance"] - amount
     }
 
 @api_router.get("/admin/users")

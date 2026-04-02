@@ -5,18 +5,21 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, Users, MapPin, DollarSign, TrendingUp, 
-  Menu, X, LogOut, User, Check, Ban, Activity
+  Menu, X, LogOut, User, Check, Ban, Activity, Wallet, Building
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import PlatformWallet from "./PlatformWallet";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showPlatformWallet, setShowPlatformWallet] = useState(false);
   const [loading, setLoading] = useState(true);
   
   // Data
   const [stats, setStats] = useState(null);
+  const [platformWallet, setPlatformWallet] = useState(null);
   const [users, setUsers] = useState([]);
   const [rides, setRides] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
@@ -27,6 +30,15 @@ const AdminDashboard = () => {
       setStats(response.data);
     } catch (error) {
       console.error("Error fetching stats:", error);
+    }
+  }, []);
+
+  const fetchPlatformWallet = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/admin/platform-wallet`);
+      setPlatformWallet(response.data);
+    } catch (error) {
+      console.error("Error fetching platform wallet:", error);
     }
   }, []);
 
@@ -51,7 +63,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([fetchStats(), fetchUsers(), fetchRides()]);
+      await Promise.all([fetchStats(), fetchUsers(), fetchRides(), fetchPlatformWallet()]);
       setLoading(false);
     };
     init();
@@ -60,10 +72,11 @@ const AdminDashboard = () => {
     const interval = setInterval(() => {
       fetchStats();
       fetchRides();
+      fetchPlatformWallet();
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [fetchStats, fetchUsers, fetchRides]);
+  }, [fetchStats, fetchUsers, fetchRides, fetchPlatformWallet]);
 
   const handleToggleUserStatus = async (userId) => {
     try {
@@ -79,6 +92,11 @@ const AdminDashboard = () => {
     await logout();
     navigate("/");
   };
+
+  // Show platform wallet page
+  if (showPlatformWallet) {
+    return <PlatformWallet onClose={() => { setShowPlatformWallet(false); fetchPlatformWallet(); }} />;
+  }
 
   if (loading) {
     return (
@@ -146,6 +164,34 @@ const AdminDashboard = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" data-testid="overview-content">
+            {/* Platform Wallet Card - Prominent */}
+            <button
+              onClick={() => setShowPlatformWallet(true)}
+              className="w-full brutalist-card bg-gradient-to-r from-black to-gray-800 text-white p-6 mb-6 text-left hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all"
+              data-testid="platform-wallet-card"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building className="w-6 h-6 text-[#FFBE00]" />
+                    <span className="text-sm text-gray-400 uppercase tracking-wider">Portefeuille MaliRide</span>
+                  </div>
+                  <p className="font-['Outfit'] font-black text-4xl text-[#FFBE00]">
+                    {(platformWallet?.balance || 0).toLocaleString()} <span className="text-xl">FCFA</span>
+                  </p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Commission 15% sur chaque course
+                  </p>
+                </div>
+                <div className="text-right">
+                  <Wallet className="w-12 h-12 text-[#FFBE00] mb-2" />
+                  <span className="text-sm bg-[#FFBE00] text-black px-3 py-1 font-bold">
+                    VOIR DÉTAILS →
+                  </span>
+                </div>
+              </div>
+            </button>
+
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="brutalist-card bg-white p-4">

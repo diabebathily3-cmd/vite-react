@@ -418,6 +418,109 @@ class MaliRideAPITester:
         
         return True
 
+    def test_platform_wallet_endpoints(self):
+        """Test platform wallet endpoints (admin only)"""
+        print("\n=== TESTING PLATFORM WALLET ENDPOINTS ===")
+        
+        if not self.admin_token:
+            self.log_test("Platform Wallet Tests", False, "No admin token available")
+            return False
+        
+        # Test platform wallet API
+        response = self.make_request("GET", "admin/platform-wallet", token=self.admin_token)
+        if response and response.status_code == 200:
+            try:
+                data = response.json()
+                required_fields = ['balance', 'total_earnings', 'total_commissions']
+                missing = [f for f in required_fields if f not in data]
+                if missing:
+                    self.log_test("Platform Wallet Structure", False, f"Missing fields: {missing}")
+                else:
+                    self.log_test("Platform Wallet API", True, f"Balance: {data.get('balance', 0)} FCFA, Commissions: {data.get('total_commissions', 0)} FCFA")
+            except Exception as e:
+                self.log_test("Platform Wallet API", False, f"JSON parse error: {str(e)}")
+        else:
+            status = response.status_code if response else "No response"
+            self.log_test("Platform Wallet API", False, f"Failed to get platform wallet", 200, status)
+        
+        # Test platform wallet stats
+        response = self.make_request("GET", "admin/platform-wallet/stats", token=self.admin_token)
+        if response and response.status_code == 200:
+            try:
+                data = response.json()
+                required_fields = ['balance', 'total_commissions', 'commission_rate', 'today_commissions', 'week_commissions', 'month_commissions']
+                missing = [f for f in required_fields if f not in data]
+                if missing:
+                    self.log_test("Platform Wallet Stats Structure", False, f"Missing fields: {missing}")
+                else:
+                    commission_rate = data.get('commission_rate', 0)
+                    if commission_rate != 0.15:
+                        self.log_test("Commission Rate Check", False, f"Expected 0.15 (15%), got {commission_rate}")
+                    else:
+                        self.log_test("Platform Wallet Stats", True, f"Commission Rate: {commission_rate * 100}%, Today: {data.get('today_commissions', 0)} FCFA")
+            except Exception as e:
+                self.log_test("Platform Wallet Stats", False, f"JSON parse error: {str(e)}")
+        else:
+            status = response.status_code if response else "No response"
+            self.log_test("Platform Wallet Stats", False, f"Failed to get platform wallet stats", 200, status)
+        
+        # Test platform wallet transactions
+        response = self.make_request("GET", "admin/platform-wallet/transactions", token=self.admin_token)
+        if response and response.status_code == 200:
+            try:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_test("Platform Wallet Transactions", True, f"Found {len(data)} platform transactions")
+                    
+                    # If there are transactions, verify structure
+                    if data:
+                        first_tx = data[0]
+                        required_fields = ['transaction_id', 'type', 'amount', 'created_at']
+                        missing = [f for f in required_fields if f not in first_tx]
+                        if missing:
+                            self.log_test("Platform Transaction Structure", False, f"Missing fields: {missing}")
+                        else:
+                            self.log_test("Platform Transaction Structure", True, f"Sample: {first_tx.get('type')} - {first_tx.get('amount')} FCFA")
+                else:
+                    self.log_test("Platform Wallet Transactions", False, f"Expected list, got {type(data)}")
+            except Exception as e:
+                self.log_test("Platform Wallet Transactions", False, f"JSON parse error: {str(e)}")
+        else:
+            status = response.status_code if response else "No response"
+            self.log_test("Platform Wallet Transactions", False, f"Failed to get platform transactions", 200, status)
+        
+        # Test platform withdrawal API (only if there's balance)
+        response = self.make_request("GET", "admin/platform-wallet", token=self.admin_token)
+        if response and response.status_code == 200:
+            try:
+                wallet_data = response.json()
+                current_balance = wallet_data.get('balance', 0)
+                if current_balance > 0:
+                    withdrawal_amount = min(1000, current_balance)
+                    response = self.make_request("POST", "admin/platform-wallet/withdraw", 
+                        data={
+                            "amount": withdrawal_amount,
+                            "method": "bank_transfer",
+                            "account": "TEST-ACCOUNT-123",
+                            "description": "Test withdrawal"
+                        }, 
+                        token=self.admin_token)
+                    
+                    if response and response.status_code == 200:
+                        self.log_test("Platform Withdrawal API", True, f"Withdrawal of {withdrawal_amount} FCFA successful")
+                    else:
+                        status = response.status_code if response else "No response"
+                        self.log_test("Platform Withdrawal API", False, f"Failed to process withdrawal", 200, status)
+                else:
+                    self.log_test("Platform Withdrawal API", True, "No balance available for withdrawal test (normal for new platform)")
+            except Exception as e:
+                self.log_test("Platform Withdrawal API", False, f"JSON parse error: {str(e)}")
+        else:
+            status = response.status_code if response else "No response"
+            self.log_test("Platform Withdrawal API", False, f"Could not get platform wallet for withdrawal test", 200, status)
+        
+        return True
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting MaliRide Backend API Tests...")
@@ -443,6 +546,9 @@ class MaliRideAPITester:
         
         # Test wallet endpoints
         self.test_wallet_endpoints()
+        
+        # Test platform wallet endpoints (admin only)
+        self.test_platform_wallet_endpoints()
         
         # Print summary
         print("\n" + "=" * 60)
