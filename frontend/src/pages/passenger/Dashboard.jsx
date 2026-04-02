@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, MapPin, Clock, CreditCard, Star, MessageCircle, 
-  History, Menu, X, LogOut, User, Navigation, Phone
+  History, Menu, X, LogOut, User, Navigation, Phone, UserCircle
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
+import PassengerProfile from "./Profile";
 
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png";
 
@@ -63,6 +64,7 @@ const PassengerDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [activeRide, setActiveRide] = useState(null);
   const [rideHistory, setRideHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -233,6 +235,11 @@ const PassengerDashboard = () => {
     await logout();
     navigate("/");
   };
+
+  // Show profile page
+  if (showProfile) {
+    return <PassengerProfile onClose={() => setShowProfile(false)} />;
+  }
 
   if (loading) {
     return (
@@ -538,6 +545,18 @@ const PassengerDashboard = () => {
             </div>
             
             <nav className="p-4">
+              <button
+                onClick={() => {
+                  setShowProfile(true);
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 p-3 hover:bg-[#FFBE00] border-b border-gray-200 bg-gray-50"
+                data-testid="menu-profile-btn"
+              >
+                <UserCircle className="w-5 h-5" />
+                <span className="font-bold">Mon Profil</span>
+              </button>
+              
               <button
                 onClick={() => {
                   setMenuOpen(false);

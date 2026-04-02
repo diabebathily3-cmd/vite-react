@@ -433,6 +433,13 @@ async def update_profile(profile_data: dict, user: dict = Depends(get_current_us
         if "bio" in profile_data:
             update_fields["bio"] = profile_data["bio"]
     
+    # Passenger-specific fields
+    if user["role"] == "passenger":
+        if "favorite_addresses" in profile_data:
+            update_fields["favorite_addresses"] = profile_data["favorite_addresses"]
+        if "preferred_payment" in profile_data:
+            update_fields["preferred_payment"] = profile_data["preferred_payment"]
+    
     if update_fields:
         await db.users.update_one(
             {"user_id": user["user_id"]},
