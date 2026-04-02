@@ -131,16 +131,40 @@ const DriverDashboard = () => {
   // Notifications
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasNewRides, setHasNewRides] = useState(false);
+  const [ringing, setRinging] = useState(false);
   const prevPendingCountRef = useRef(0);
   const notifAudioRef = useRef(null);
+  const ringIntervalRef = useRef(null);
 
   // GPS state
   const [myLocation, setMyLocation] = useState(null);
 
   useEffect(() => {
-    notifAudioRef.current = new Audio("/notification.wav");
-    notifAudioRef.current.volume = 0.7;
+    notifAudioRef.current = new Audio("/ride_alert.wav");
+    notifAudioRef.current.volume = 1.0;
+    return () => {
+      if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
+    };
   }, []);
+
+  const startRinging = () => {
+    setRinging(true);
+    try { notifAudioRef.current?.play(); } catch(e) {}
+    // Repeat every 4 seconds until stopped
+    ringIntervalRef.current = setInterval(() => {
+      try { notifAudioRef.current?.play(); } catch(e) {}
+    }, 4000);
+  };
+
+  const stopRinging = () => {
+    setRinging(false);
+    if (ringIntervalRef.current) {
+      clearInterval(ringIntervalRef.current);
+      ringIntervalRef.current = null;
+    }
+    notifAudioRef.current?.pause();
+    if (notifAudioRef.current) notifAudioRef.current.currentTime = 0;
+  };
 
   // Get driver's GPS position and send to backend
   useEffect(() => {
@@ -188,13 +212,17 @@ const DriverDashboard = () => {
     try {
       const response = await axios.get(`${API}/rides/pending`);
       const newRides = response.data;
-      // Detect new rides and play notification
+      // Detect new rides and ring
       if (newRides.length > prevPendingCountRef.current && prevPendingCountRef.current >= 0) {
         setHasNewRides(true);
-        try { notifAudioRef.current?.play(); } catch(e) {}
+        startRinging();
         if (newRides.length > 0) {
           toast.success(`${newRides.length - prevPendingCountRef.current} nouvelle(s) course(s) disponible(s) !`);
         }
+      }
+      // Stop ringing if no more pending rides
+      if (newRides.length === 0 && prevPendingCountRef.current > 0) {
+        stopRinging();
       }
       prevPendingCountRef.current = newRides.length;
       setPendingRides(newRides);
@@ -274,9 +302,12 @@ const DriverDashboard = () => {
 
   const handleAcceptRide = async (rideId) => {
     try {
+      stopRinging();
       const response = await axios.put(`${API}/rides/${rideId}/accept`);
       setActiveRide(response.data);
       setPendingRides([]);
+      setHasNewRides(false);
+      prevPendingCountRef.current = 0;
       toast.success("Course acceptée!");
     } catch (error) {
       toast.error(error.response?.data?.detail || "Erreur lors de l'acceptation");
@@ -382,7 +413,7 @@ const DriverDashboard = () => {
           {/* Notification Bell */}
           <div className="relative">
             <button
-              onClick={() => { setShowNotifications(!showNotifications); setHasNewRides(false); }}
+              onClick={() => { setShowNotifications(!showNotifications); setHasNewRides(false); if (ringing) stopRinging(); }}
               className={`p-2 border border-[#FFBE00] relative ${hasNewRides ? "animate-bounce" : ""}`}
               data-testid="notification-bell-btn"
             >
@@ -435,6 +466,23 @@ const DriverDashboard = () => {
           </button>
         </div>
       </header>
+
+      {/* Ringing Alert Banner */}
+      {ringing && (
+        <div className="bg-[#FFBE00] border-b-2 border-black px-4 py-3 flex items-center justify-between animate-pulse" data-testid="ringing-banner">
+          <div className="flex items-center gap-3">
+            <Bell className="w-5 h-5 text-black animate-bounce" />
+            <span className="font-bold text-sm">NOUVELLE COURSE DISPONIBLE !</span>
+          </div>
+          <button
+            onClick={stopRinging}
+            className="bg-black text-[#FFBE00] px-4 py-1.5 font-bold text-sm border border-black"
+            data-testid="stop-ringing-btn"
+          >
+            ARRÊTER
+          </button>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 relative">

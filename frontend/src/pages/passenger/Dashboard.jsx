@@ -141,8 +141,8 @@ const PassengerDashboard = () => {
   const [myLocation, setMyLocation] = useState(null);
 
   useEffect(() => {
-    notifAudioRef.current = new Audio("/notification.wav");
-    notifAudioRef.current.volume = 0.7;
+    notifAudioRef.current = new Audio("/passenger_alert.wav");
+    notifAudioRef.current.volume = 1.0;
   }, []);
 
   // Get user's GPS position
