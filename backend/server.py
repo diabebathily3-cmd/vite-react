@@ -75,6 +75,7 @@ class RideRequest(BaseModel):
     pickup_location: dict  # {lat, lng, address}
     dropoff_location: dict  # {lat, lng, address}
     payment_method: Literal["cash", "mobile_money"] = "cash"
+    vehicle_type: Literal["car", "moto"] = "car"
 
 class Ride(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -85,6 +86,7 @@ class Ride(BaseModel):
     dropoff_location: dict
     status: Literal["pending", "accepted", "arrived", "in_progress", "completed", "cancelled"]
     payment_method: str
+    vehicle_type: str = "car"
     estimated_price: float
     final_price: Optional[float] = None
     distance_km: float
@@ -184,10 +186,17 @@ async def get_current_user(request: Request) -> dict:
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token invalide")
 
-def calculate_price(distance_km: float) -> float:
-    """Calculate ride price based on distance - Mali pricing"""
-    base_fare = 500  # 500 FCFA base
-    per_km = 300  # 300 FCFA per km
+def calculate_price(distance_km: float, vehicle_type: str = "car") -> float:
+    """Calculate ride price based on distance and vehicle type - Mali pricing"""
+    if vehicle_type == "moto":
+        # Moto-taxi pricing (cheaper)
+        base_fare = 200  # 200 FCFA base
+        per_km = 150  # 150 FCFA per km
+    else:
+        # Car taxi pricing
+        base_fare = 500  # 500 FCFA base
+        per_km = 300  # 300 FCFA per km
+    
     return round(base_fare + (distance_km * per_km), 0)
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -486,7 +495,7 @@ async def get_user_profile(user_id: str, current_user: dict = Depends(get_curren
 
 @api_router.post("/rides/estimate")
 async def estimate_ride(ride_request: RideRequest):
-    """Estimate ride price"""
+    """Estimate ride price for car or moto"""
     distance = calculate_distance(
         ride_request.pickup_location["lat"],
         ride_request.pickup_location["lng"],
@@ -494,15 +503,19 @@ async def estimate_ride(ride_request: RideRequest):
         ride_request.dropoff_location["lng"]
     )
     
-    # Estimate duration (assuming average speed of 30 km/h in city)
-    duration = round((distance / 30) * 60, 0)
+    # Estimate duration (moto faster in traffic)
+    if ride_request.vehicle_type == "moto":
+        duration = round((distance / 35) * 60, 0)  # 35 km/h average for moto
+    else:
+        duration = round((distance / 30) * 60, 0)  # 30 km/h for car
     
-    price = calculate_price(distance)
+    price = calculate_price(distance, ride_request.vehicle_type)
     
     return {
         "distance_km": distance,
         "duration_minutes": int(duration),
         "estimated_price": price,
+        "vehicle_type": ride_request.vehicle_type,
         "currency": "FCFA"
     }
 
@@ -528,8 +541,13 @@ async def create_ride(ride_request: RideRequest, user: dict = Depends(get_curren
         ride_request.dropoff_location["lng"]
     )
     
-    duration = round((distance / 30) * 60, 0)
-    price = calculate_price(distance)
+    # Duration based on vehicle type
+    if ride_request.vehicle_type == "moto":
+        duration = round((distance / 35) * 60, 0)
+    else:
+        duration = round((distance / 30) * 60, 0)
+    
+    price = calculate_price(distance, ride_request.vehicle_type)
     
     ride_id = f"ride_{uuid.uuid4().hex[:12]}"
     ride_doc = {
@@ -540,6 +558,7 @@ async def create_ride(ride_request: RideRequest, user: dict = Depends(get_curren
         "dropoff_location": ride_request.dropoff_location,
         "status": "pending",
         "payment_method": ride_request.payment_method,
+        "vehicle_type": ride_request.vehicle_type,
         "estimated_price": price,
         "final_price": None,
         "distance_km": distance,

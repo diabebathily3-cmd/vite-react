@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, MapPin, Clock, DollarSign, Star, MessageCircle, 
-  Power, Menu, X, LogOut, User, Navigation, Check, Phone, UserCircle, Wallet
+  Power, Menu, X, LogOut, User, Navigation, Check, Phone, UserCircle, Wallet, Bike
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
 import DriverProfile from "./Profile";
@@ -336,6 +336,25 @@ const DriverDashboard = () => {
               
               {isOnline && pendingRides.map((ride) => (
                 <div key={ride.ride_id} className="brutalist-card p-4 mb-3" data-testid="pending-ride-card">
+                  {/* Vehicle Type Badge */}
+                  <div className={`inline-flex items-center gap-1 px-2 py-1 mb-3 text-sm font-bold ${
+                    ride.vehicle_type === "moto" 
+                      ? "bg-orange-100 text-orange-800" 
+                      : "bg-blue-100 text-blue-800"
+                  }`}>
+                    {ride.vehicle_type === "moto" ? (
+                      <>
+                        <Bike className="w-4 h-4" />
+                        MOTO-TAXI
+                      </>
+                    ) : (
+                      <>
+                        <Car className="w-4 h-4" />
+                        TAXI
+                      </>
+                    )}
+                  </div>
+                  
                   <div className="flex items-start gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">

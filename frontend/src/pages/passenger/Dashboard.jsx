@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, MapPin, Clock, CreditCard, Star, MessageCircle, 
-  History, Menu, X, LogOut, User, Navigation, Phone, UserCircle
+  History, Menu, X, LogOut, User, Navigation, Phone, UserCircle, Bike
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
 import PassengerProfile from "./Profile";
@@ -74,7 +74,8 @@ const PassengerDashboard = () => {
   const [dropoff, setDropoff] = useState(null);
   const [estimate, setEstimate] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [bookingStep, setBookingStep] = useState("location"); // location, confirm, searching, active
+  const [vehicleType, setVehicleType] = useState("car"); // car or moto
+  const [bookingStep, setBookingStep] = useState("location"); // location, vehicle, confirm, searching, active
   
   // Chat state
   const [messages, setMessages] = useState([]);
@@ -148,16 +149,20 @@ const PassengerDashboard = () => {
     return () => clearInterval(interval);
   }, [fetchActiveRide, fetchHistory]);
 
-  const handleEstimate = async () => {
+  const handleEstimate = async (selectedVehicleType) => {
     if (!pickup || !dropoff) {
       toast.error("Veuillez sélectionner les points de départ et d'arrivée");
       return;
     }
     
+    const vType = selectedVehicleType || vehicleType;
+    setVehicleType(vType);
+    
     try {
       const response = await axios.post(`${API}/rides/estimate`, {
         pickup_location: pickup,
-        dropoff_location: dropoff
+        dropoff_location: dropoff,
+        vehicle_type: vType
       });
       setEstimate(response.data);
       setBookingStep("confirm");
@@ -171,7 +176,8 @@ const PassengerDashboard = () => {
       const response = await axios.post(`${API}/rides`, {
         pickup_location: pickup,
         dropoff_location: dropoff,
-        payment_method: paymentMethod
+        payment_method: paymentMethod,
+        vehicle_type: vehicleType
       });
       setActiveRide(response.data);
       setBookingStep("searching");
@@ -318,13 +324,56 @@ const PassengerDashboard = () => {
                 </select>
               </div>
               
+              {/* Vehicle Type Selection */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-600 block mb-2">Type de véhicule</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVehicleType("car");
+                      if (pickup && dropoff) handleEstimate("car");
+                    }}
+                    className={`p-4 border-2 border-black flex flex-col items-center gap-2 transition-all ${
+                      vehicleType === "car" 
+                        ? "bg-[#FFBE00] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" 
+                        : "bg-white hover:bg-gray-50"
+                    }`}
+                    data-testid="vehicle-car-btn"
+                  >
+                    <Car className="w-10 h-10" />
+                    <span className="font-bold text-lg">TAXI</span>
+                    <span className="text-xs text-gray-600">Voiture confortable</span>
+                    <span className="text-sm font-bold mt-1">500 + 300/km</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVehicleType("moto");
+                      if (pickup && dropoff) handleEstimate("moto");
+                    }}
+                    className={`p-4 border-2 border-black flex flex-col items-center gap-2 transition-all ${
+                      vehicleType === "moto" 
+                        ? "bg-[#FFBE00] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" 
+                        : "bg-white hover:bg-gray-50"
+                    }`}
+                    data-testid="vehicle-moto-btn"
+                  >
+                    <Bike className="w-10 h-10" />
+                    <span className="font-bold text-lg">MOTO</span>
+                    <span className="text-xs text-gray-600">Rapide & économique</span>
+                    <span className="text-sm font-bold mt-1">200 + 150/km</span>
+                  </button>
+                </div>
+              </div>
+              
               <button
-                onClick={handleEstimate}
+                onClick={() => handleEstimate(vehicleType)}
                 disabled={!pickup || !dropoff}
                 className="brutalist-btn w-full py-4 disabled:opacity-50"
                 data-testid="estimate-btn"
               >
-                VOIR LE PRIX
+                {vehicleType === "moto" ? "🏍️" : "🚗"} VOIR LE PRIX
               </button>
             </div>
           )}
@@ -333,6 +382,23 @@ const PassengerDashboard = () => {
           {bookingStep === "confirm" && estimate && (
             <div className="p-4" data-testid="booking-confirm-step">
               <h2 className="font-['Outfit'] font-bold text-lg mb-4">CONFIRMER VOTRE COURSE</h2>
+              
+              {/* Vehicle Type Badge */}
+              <div className={`flex items-center justify-center gap-2 p-3 mb-4 border-2 border-black ${
+                vehicleType === "moto" ? "bg-orange-100" : "bg-blue-100"
+              }`}>
+                {vehicleType === "moto" ? (
+                  <>
+                    <Bike className="w-6 h-6" />
+                    <span className="font-bold">MOTO-TAXI</span>
+                  </>
+                ) : (
+                  <>
+                    <Car className="w-6 h-6" />
+                    <span className="font-bold">TAXI VOITURE</span>
+                  </>
+                )}
+              </div>
               
               <div className="brutalist-card p-4 mb-4">
                 <div className="flex justify-between items-center mb-3">
@@ -400,8 +466,14 @@ const PassengerDashboard = () => {
           {/* Searching for driver */}
           {bookingStep === "searching" && (
             <div className="p-6 text-center" data-testid="booking-searching-step">
-              <div className="w-16 h-16 border-4 border-black border-t-[#FFBE00] rounded-full animate-spin mx-auto mb-4"></div>
-              <h2 className="font-['Outfit'] font-bold text-lg mb-2">RECHERCHE D'UN CHAUFFEUR</h2>
+              {vehicleType === "moto" ? (
+                <Bike className="w-16 h-16 mx-auto mb-4 text-[#FFBE00] animate-pulse" />
+              ) : (
+                <Car className="w-16 h-16 mx-auto mb-4 text-[#FFBE00] animate-pulse" />
+              )}
+              <h2 className="font-['Outfit'] font-bold text-lg mb-2">
+                RECHERCHE D'UN {vehicleType === "moto" ? "MOTO-TAXI" : "TAXI"}
+              </h2>
               <p className="text-gray-600 mb-4">Veuillez patienter...</p>
               <button
                 onClick={handleCancelRide}
@@ -416,6 +488,23 @@ const PassengerDashboard = () => {
           {/* Active Ride */}
           {bookingStep === "active" && activeRide && (
             <div className="p-4" data-testid="active-ride-panel">
+              {/* Vehicle Type Badge */}
+              <div className={`flex items-center justify-center gap-2 p-2 mb-3 ${
+                activeRide.vehicle_type === "moto" ? "bg-orange-100" : "bg-blue-100"
+              }`}>
+                {activeRide.vehicle_type === "moto" ? (
+                  <>
+                    <Bike className="w-5 h-5" />
+                    <span className="font-bold text-sm">MOTO-TAXI</span>
+                  </>
+                ) : (
+                  <>
+                    <Car className="w-5 h-5" />
+                    <span className="font-bold text-sm">TAXI</span>
+                  </>
+                )}
+              </div>
+              
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-['Outfit'] font-bold text-lg">
                   {activeRide.status === "accepted" && "CHAUFFEUR EN ROUTE"}

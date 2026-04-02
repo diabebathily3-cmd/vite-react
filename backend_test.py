@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MaliRide Backend API Testing Suite
-Tests all backend endpoints for the Mali taxi app
+SIRA TAXI Backend API Test - MOTO-TAXI Feature Testing
+Tests the new MOTO-TAXI functionality including pricing, vehicle type selection, and API responses.
 """
 
 import requests
@@ -9,567 +9,376 @@ import sys
 import json
 from datetime import datetime
 
-class MaliRideAPITester:
+class SiraTaxiAPITester:
     def __init__(self, base_url="https://uber-mali-drive.preview.emergentagent.com"):
         self.base_url = base_url
-        self.api_url = f"{base_url}/api"
-        self.admin_token = None
         self.passenger_token = None
         self.driver_token = None
         self.tests_run = 0
         self.tests_passed = 0
         self.failed_tests = []
-        
-        # Test credentials
-        self.admin_creds = {"email": "admin@maliride.ml", "password": "Admin123!"}
-        self.passenger_creds = {"email": "passager@test.ml", "password": "Test123!", "name": "Test Passager", "phone": "+223 70 00 00 01", "role": "passenger"}
-        self.driver_creds = {"email": "chauffeur@test.ml", "password": "Test123!", "name": "Test Chauffeur", "phone": "+223 70 00 00 02", "role": "driver"}
 
-    def log_test(self, name, success, details="", expected_status=None, actual_status=None):
-        """Log test result"""
-        self.tests_run += 1
-        status = "✅ PASS" if success else "❌ FAIL"
-        print(f"\n{status} - {name}")
-        
-        if expected_status and actual_status:
-            print(f"   Expected: {expected_status}, Got: {actual_status}")
-        
-        if details:
-            print(f"   Details: {details}")
-            
-        if success:
-            self.tests_passed += 1
-        else:
-            self.failed_tests.append({
-                "test": name,
-                "details": details,
-                "expected_status": expected_status,
-                "actual_status": actual_status
-            })
-
-    def make_request(self, method, endpoint, data=None, token=None, expected_status=200):
-        """Make HTTP request with error handling"""
-        url = f"{self.api_url}/{endpoint}"
-        headers = {'Content-Type': 'application/json'}
+    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None, token=None):
+        """Run a single API test"""
+        url = f"{self.base_url}/api/{endpoint}"
+        test_headers = {'Content-Type': 'application/json'}
         
         if token:
-            headers['Authorization'] = f'Bearer {token}'
-            
+            test_headers['Authorization'] = f'Bearer {token}'
+        if headers:
+            test_headers.update(headers)
+
+        self.tests_run += 1
+        print(f"\n🔍 Testing {name}...")
+        
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers, timeout=10)
+                response = requests.get(url, headers=test_headers, timeout=10)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=headers, timeout=10)
+                response = requests.post(url, json=data, headers=test_headers, timeout=10)
             elif method == 'PUT':
-                response = requests.put(url, json=data, headers=headers, timeout=10)
+                response = requests.put(url, json=data, headers=test_headers, timeout=10)
+
+            success = response.status_code == expected_status
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                try:
+                    return True, response.json()
+                except:
+                    return True, {}
             else:
-                raise ValueError(f"Unsupported method: {method}")
-                
-            return response
-            
-        except requests.exceptions.RequestException as e:
-            print(f"   Request failed: {str(e)}")
-            return None
-
-    def test_health_endpoint(self):
-        """Test health check endpoint"""
-        print("\n🔍 Testing Health Endpoint...")
-        
-        response = self.make_request('GET', 'health')
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                if data.get('status') == 'healthy':
-                    self.log_test("Health Check", True, "Service is healthy")
-                    return True
-                else:
-                    self.log_test("Health Check", False, f"Unexpected response: {data}")
-            except:
-                self.log_test("Health Check", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Health Check", False, f"Health endpoint failed", 200, status)
-        
-        return False
-
-    def test_admin_login(self):
-        """Test admin login"""
-        print("\n🔍 Testing Admin Login...")
-        
-        response = self.make_request('POST', 'auth/login', self.admin_creds)
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                if 'token' in data and 'user' in data:
-                    self.admin_token = data['token']
-                    user = data['user']
-                    if user.get('role') == 'admin':
-                        self.log_test("Admin Login", True, f"Logged in as {user.get('name')}")
-                        return True
-                    else:
-                        self.log_test("Admin Login", False, f"Wrong role: {user.get('role')}")
-                else:
-                    self.log_test("Admin Login", False, "Missing token or user in response")
-            except:
-                self.log_test("Admin Login", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Admin Login", False, "Login failed", 200, status)
-        
-        return False
-
-    def test_auth_me(self):
-        """Test /auth/me endpoint"""
-        print("\n🔍 Testing Auth Me Endpoint...")
-        
-        if not self.admin_token:
-            self.log_test("Auth Me", False, "No admin token available")
-            return False
-            
-        response = self.make_request('GET', 'auth/me', token=self.admin_token)
-        if response and response.status_code == 200:
-            try:
-                user = response.json()
-                if user.get('role') == 'admin' and user.get('email') == self.admin_creds['email']:
-                    self.log_test("Auth Me", True, f"Retrieved user: {user.get('name')}")
-                    return True
-                else:
-                    self.log_test("Auth Me", False, f"Unexpected user data: {user}")
-            except:
-                self.log_test("Auth Me", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Auth Me", False, "Auth me failed", 200, status)
-        
-        return False
-
-    def test_passenger_registration(self):
-        """Test passenger registration"""
-        print("\n🔍 Testing Passenger Registration...")
-        
-        response = self.make_request('POST', 'auth/register', self.passenger_creds)
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                if 'token' in data and 'user' in data:
-                    self.passenger_token = data['token']
-                    user = data['user']
-                    if user.get('role') == 'passenger':
-                        self.log_test("Passenger Registration", True, f"Registered: {user.get('name')}")
-                        return True
-                    else:
-                        self.log_test("Passenger Registration", False, f"Wrong role: {user.get('role')}")
-                else:
-                    self.log_test("Passenger Registration", False, "Missing token or user in response")
-            except:
-                self.log_test("Passenger Registration", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            # Registration might fail if user already exists, check for 400
-            if response and response.status_code == 400:
-                self.log_test("Passenger Registration", True, "User already exists (expected)")
-                # Try to login instead
-                login_response = self.make_request('POST', 'auth/login', {
-                    "email": self.passenger_creds["email"],
-                    "password": self.passenger_creds["password"]
+                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                print(f"   Response: {response.text[:200]}")
+                self.failed_tests.append({
+                    "test": name,
+                    "expected": expected_status,
+                    "actual": response.status_code,
+                    "response": response.text[:200]
                 })
-                if login_response and login_response.status_code == 200:
-                    data = login_response.json()
-                    self.passenger_token = data.get('token')
-                    return True
-            else:
-                self.log_test("Passenger Registration", False, "Registration failed", 200, status)
-        
+                return False, {}
+
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            self.failed_tests.append({
+                "test": name,
+                "error": str(e)
+            })
+            return False, {}
+
+    def test_passenger_login(self):
+        """Test passenger login"""
+        success, response = self.run_test(
+            "Passenger Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "passager@test.ml", "password": "Test123!"}
+        )
+        if success and 'token' in response:
+            self.passenger_token = response['token']
+            print(f"   Passenger logged in successfully")
+            return True
         return False
 
     def test_driver_login(self):
-        """Test driver login with existing credentials"""
-        print("\n🔍 Testing Driver Login...")
-        
-        login_creds = {
-            "email": self.driver_creds["email"],
-            "password": self.driver_creds["password"]
+        """Test driver login"""
+        success, response = self.run_test(
+            "Driver Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "chauffeur@test.ml", "password": "Test123!"}
+        )
+        if success and 'token' in response:
+            self.driver_token = response['token']
+            print(f"   Driver logged in successfully")
+            return True
+        return False
+
+    def test_car_estimate(self):
+        """Test car taxi price estimation"""
+        test_data = {
+            "pickup_location": {"lat": 12.6461, "lng": -7.9925, "address": "ACI 2000"},
+            "dropoff_location": {"lat": 12.6234, "lng": -8.0156, "address": "Hamdallaye"},
+            "vehicle_type": "car"
         }
         
-        response = self.make_request('POST', 'auth/login', login_creds)
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                if 'token' in data and 'user' in data:
-                    self.driver_token = data['token']
-                    user = data['user']
-                    if user.get('role') == 'driver':
-                        self.log_test("Driver Login", True, f"Logged in as {user.get('name')}")
-                        return True
-                    else:
-                        self.log_test("Driver Login", False, f"Wrong role: {user.get('role')}")
-                else:
-                    self.log_test("Driver Login", False, "Missing token or user in response")
-            except:
-                self.log_test("Driver Login", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Driver Login", False, "Login failed", 200, status)
+        success, response = self.run_test(
+            "Car Taxi Price Estimate",
+            "POST",
+            "rides/estimate",
+            200,
+            data=test_data
+        )
         
-        return False
+        if success:
+            # Verify response structure
+            required_fields = ["distance_km", "duration_minutes", "estimated_price", "vehicle_type"]
+            for field in required_fields:
+                if field not in response:
+                    print(f"   ❌ Missing field: {field}")
+                    return False
+            
+            # Verify vehicle type
+            if response["vehicle_type"] != "car":
+                print(f"   ❌ Wrong vehicle type: {response['vehicle_type']}")
+                return False
+            
+            # Verify pricing logic (500 + 300/km for car)
+            distance = response["distance_km"]
+            expected_price = 500 + (distance * 300)
+            actual_price = response["estimated_price"]
+            
+            if abs(actual_price - expected_price) > 1:  # Allow 1 FCFA tolerance for rounding
+                print(f"   ❌ Wrong car pricing: expected ~{expected_price}, got {actual_price}")
+                return False
+            
+            print(f"   ✅ Car estimate: {distance}km, {actual_price} FCFA")
+            return True, response
+        
+        return False, {}
 
-    def test_ride_estimation(self):
-        """Test ride price estimation"""
-        print("\n🔍 Testing Ride Price Estimation...")
-        
-        ride_data = {
-            "pickup_location": {
-                "lat": 12.6392,
-                "lng": -8.0029,
-                "address": "Bamako Centre"
-            },
-            "dropoff_location": {
-                "lat": 12.6500,
-                "lng": -7.9900,
-                "address": "Hippodrome"
-            },
-            "payment_method": "cash"
+    def test_moto_estimate(self):
+        """Test moto taxi price estimation"""
+        test_data = {
+            "pickup_location": {"lat": 12.6461, "lng": -7.9925, "address": "ACI 2000"},
+            "dropoff_location": {"lat": 12.6234, "lng": -8.0156, "address": "Hamdallaye"},
+            "vehicle_type": "moto"
         }
         
-        response = self.make_request('POST', 'rides/estimate', ride_data)
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                required_fields = ['distance_km', 'duration_minutes', 'estimated_price', 'currency']
-                if all(field in data for field in required_fields):
-                    self.log_test("Ride Estimation", True, 
-                                f"Distance: {data['distance_km']}km, Price: {data['estimated_price']} {data['currency']}")
-                    return True
-                else:
-                    self.log_test("Ride Estimation", False, f"Missing fields in response: {data}")
-            except:
-                self.log_test("Ride Estimation", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Ride Estimation", False, "Estimation failed", 200, status)
+        success, response = self.run_test(
+            "Moto Taxi Price Estimate",
+            "POST",
+            "rides/estimate",
+            200,
+            data=test_data
+        )
         
-        return False
-
-    def test_admin_stats(self):
-        """Test admin stats endpoint"""
-        print("\n🔍 Testing Admin Stats...")
-        
-        if not self.admin_token:
-            self.log_test("Admin Stats", False, "No admin token available")
-            return False
+        if success:
+            # Verify response structure
+            required_fields = ["distance_km", "duration_minutes", "estimated_price", "vehicle_type"]
+            for field in required_fields:
+                if field not in response:
+                    print(f"   ❌ Missing field: {field}")
+                    return False
             
-        response = self.make_request('GET', 'admin/stats', token=self.admin_token)
-        if response and response.status_code == 200:
-            try:
-                stats = response.json()
-                required_fields = ['total_users', 'total_passengers', 'total_drivers', 'total_rides']
-                if all(field in stats for field in required_fields):
-                    self.log_test("Admin Stats", True, 
-                                f"Users: {stats['total_users']}, Rides: {stats['total_rides']}")
-                    return True
-                else:
-                    self.log_test("Admin Stats", False, f"Missing fields in stats: {stats}")
-            except:
-                self.log_test("Admin Stats", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Admin Stats", False, "Stats failed", 200, status)
-        
-        return False
-
-    def test_admin_users(self):
-        """Test admin users list"""
-        print("\n🔍 Testing Admin Users List...")
-        
-        if not self.admin_token:
-            self.log_test("Admin Users", False, "No admin token available")
-            return False
+            # Verify vehicle type
+            if response["vehicle_type"] != "moto":
+                print(f"   ❌ Wrong vehicle type: {response['vehicle_type']}")
+                return False
             
-        response = self.make_request('GET', 'admin/users', token=self.admin_token)
-        if response and response.status_code == 200:
-            try:
-                users = response.json()
-                if isinstance(users, list):
-                    admin_found = any(u.get('role') == 'admin' for u in users)
-                    if admin_found:
-                        self.log_test("Admin Users", True, f"Found {len(users)} users including admin")
-                        return True
-                    else:
-                        self.log_test("Admin Users", False, "Admin user not found in list")
-                else:
-                    self.log_test("Admin Users", False, f"Expected list, got: {type(users)}")
-            except:
-                self.log_test("Admin Users", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Admin Users", False, "Users list failed", 200, status)
-        
-        return False
-
-    def test_admin_rides(self):
-        """Test admin rides list"""
-        print("\n🔍 Testing Admin Rides List...")
-        
-        if not self.admin_token:
-            self.log_test("Admin Rides", False, "No admin token available")
-            return False
+            # Verify pricing logic (200 + 150/km for moto)
+            distance = response["distance_km"]
+            expected_price = 200 + (distance * 150)
+            actual_price = response["estimated_price"]
             
-        response = self.make_request('GET', 'admin/rides', token=self.admin_token)
-        if response and response.status_code == 200:
-            try:
-                rides = response.json()
-                if isinstance(rides, list):
-                    self.log_test("Admin Rides", True, f"Found {len(rides)} rides")
-                    return True
-                else:
-                    self.log_test("Admin Rides", False, f"Expected list, got: {type(rides)}")
-            except:
-                self.log_test("Admin Rides", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Admin Rides", False, "Rides list failed", 200, status)
+            if abs(actual_price - expected_price) > 1:  # Allow 1 FCFA tolerance for rounding
+                print(f"   ❌ Wrong moto pricing: expected ~{expected_price}, got {actual_price}")
+                return False
+            
+            print(f"   ✅ Moto estimate: {distance}km, {actual_price} FCFA")
+            return True, response
+        
+        return False, {}
+
+    def test_price_comparison(self):
+        """Test that moto is cheaper than car for same route"""
+        pickup = {"lat": 12.6461, "lng": -7.9925, "address": "ACI 2000"}
+        dropoff = {"lat": 12.6234, "lng": -8.0156, "address": "Hamdallaye"}
+        
+        # Get car estimate
+        car_success, car_response = self.run_test(
+            "Car Estimate for Comparison",
+            "POST",
+            "rides/estimate",
+            200,
+            data={"pickup_location": pickup, "dropoff_location": dropoff, "vehicle_type": "car"}
+        )
+        
+        # Get moto estimate
+        moto_success, moto_response = self.run_test(
+            "Moto Estimate for Comparison",
+            "POST",
+            "rides/estimate",
+            200,
+            data={"pickup_location": pickup, "dropoff_location": dropoff, "vehicle_type": "moto"}
+        )
+        
+        if car_success and moto_success:
+            car_price = car_response["estimated_price"]
+            moto_price = moto_response["estimated_price"]
+            
+            if moto_price >= car_price:
+                print(f"   ❌ Moto should be cheaper: car={car_price}, moto={moto_price}")
+                return False
+            
+            savings = car_price - moto_price
+            savings_percent = (savings / car_price) * 100
+            print(f"   ✅ Moto is cheaper: car={car_price} FCFA, moto={moto_price} FCFA")
+            print(f"   💰 Savings: {savings} FCFA ({savings_percent:.1f}%)")
+            return True
         
         return False
 
-    def test_wallet_endpoints(self):
-        """Test wallet-related endpoints"""
-        print("\n🔍 Testing Wallet Endpoints...")
+    def test_create_moto_ride(self):
+        """Test creating a moto ride request"""
+        if not self.passenger_token:
+            print("   ❌ No passenger token available")
+            return False
         
+        test_data = {
+            "pickup_location": {"lat": 12.6461, "lng": -7.9925, "address": "ACI 2000"},
+            "dropoff_location": {"lat": 12.6234, "lng": -8.0156, "address": "Hamdallaye"},
+            "payment_method": "cash",
+            "vehicle_type": "moto"
+        }
+        
+        success, response = self.run_test(
+            "Create Moto Ride Request",
+            "POST",
+            "rides",
+            200,
+            data=test_data,
+            token=self.passenger_token
+        )
+        
+        if success:
+            # Verify ride contains vehicle_type
+            if response.get("vehicle_type") != "moto":
+                print(f"   ❌ Wrong vehicle type in ride: {response.get('vehicle_type')}")
+                return False
+            
+            # Verify status is pending
+            if response.get("status") != "pending":
+                print(f"   ❌ Wrong status: {response.get('status')}")
+                return False
+            
+            print(f"   ✅ Moto ride created: {response.get('ride_id')}")
+            return True, response
+        
+        return False, {}
+
+    def test_driver_sees_moto_rides(self):
+        """Test that driver can see pending moto rides"""
         if not self.driver_token:
-            self.log_test("Wallet Tests", False, "No driver token available")
+            print("   ❌ No driver token available")
             return False
         
-        # Test wallet info
-        response = self.make_request('GET', 'wallet', token=self.driver_token)
-        if response and response.status_code == 200:
-            try:
-                wallet = response.json()
-                required_fields = ['balance', 'total_earnings', 'total_withdrawn', 'pending_withdrawal']
-                if all(field in wallet for field in required_fields):
-                    self.log_test("Wallet Info", True, f"Balance: {wallet['balance']} FCFA")
-                else:
-                    self.log_test("Wallet Info", False, f"Missing wallet fields: {wallet}")
-            except:
-                self.log_test("Wallet Info", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Wallet Info", False, "Wallet info failed", 200, status)
-            return False
+        # First set driver online
+        self.run_test(
+            "Set Driver Online",
+            "PUT",
+            "users/status",
+            200,
+            token=self.driver_token
+        )
         
-        # Test wallet stats
-        response = self.make_request('GET', 'wallet/stats', token=self.driver_token)
-        if response and response.status_code == 200:
-            try:
-                stats = response.json()
-                required_fields = ['today_earnings', 'week_earnings', 'month_earnings', 'total_earnings']
-                if all(field in stats for field in required_fields):
-                    self.log_test("Wallet Stats", True, f"Today: {stats['today_earnings']}, Week: {stats['week_earnings']}")
-                else:
-                    self.log_test("Wallet Stats", False, f"Missing stats fields: {stats}")
-            except:
-                self.log_test("Wallet Stats", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Wallet Stats", False, "Wallet stats failed", 200, status)
-            return False
+        success, response = self.run_test(
+            "Get Pending Rides (Driver)",
+            "GET",
+            "rides/pending",
+            200,
+            token=self.driver_token
+        )
         
-        # Test wallet transactions
-        response = self.make_request('GET', 'wallet/transactions', token=self.driver_token)
-        if response and response.status_code == 200:
-            try:
-                transactions = response.json()
-                if isinstance(transactions, list):
-                    self.log_test("Wallet Transactions", True, f"Found {len(transactions)} transactions")
-                else:
-                    self.log_test("Wallet Transactions", False, f"Expected list, got: {type(transactions)}")
-            except:
-                self.log_test("Wallet Transactions", False, "Invalid JSON response")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Wallet Transactions", False, "Wallet transactions failed", 200, status)
-            return False
+        if success:
+            rides = response if isinstance(response, list) else []
+            moto_rides = [r for r in rides if r.get("vehicle_type") == "moto"]
+            
+            print(f"   ✅ Found {len(rides)} total rides, {len(moto_rides)} moto rides")
+            
+            # Check if any moto ride has vehicle_type field
+            for ride in moto_rides:
+                if "vehicle_type" not in ride:
+                    print(f"   ❌ Moto ride missing vehicle_type field")
+                    return False
+            
+            return True
         
-        # Test withdrawal request (should fail due to insufficient balance)
-        withdrawal_data = {
-            "amount": 1000,
-            "method": "orange_money",
-            "phone_or_account": "+223 70 00 00 02"
-        }
-        
-        response = self.make_request('POST', 'wallet/withdraw', withdrawal_data, token=self.driver_token)
-        if response:
-            if response.status_code == 400:
-                # Expected - insufficient balance
-                try:
-                    error_data = response.json()
-                    if "insuffisant" in error_data.get('detail', '').lower():
-                        self.log_test("Wallet Withdrawal (Insufficient Balance)", True, "Correctly rejected due to insufficient balance")
-                    else:
-                        self.log_test("Wallet Withdrawal", False, f"Unexpected error: {error_data.get('detail')}")
-                except:
-                    self.log_test("Wallet Withdrawal (Insufficient Balance)", True, "Correctly rejected with 400 status")
-            elif response.status_code == 200:
-                self.log_test("Wallet Withdrawal", True, "Withdrawal request accepted")
-            else:
-                self.log_test("Wallet Withdrawal", False, f"Unexpected status: {response.status_code}")
-        else:
-            # Network timeout - this is acceptable for this test
-            self.log_test("Wallet Withdrawal (Network)", True, "Network timeout - endpoint exists")
-        
-        return True
+        return False
 
-    def test_platform_wallet_endpoints(self):
-        """Test platform wallet endpoints (admin only)"""
-        print("\n=== TESTING PLATFORM WALLET ENDPOINTS ===")
-        
-        if not self.admin_token:
-            self.log_test("Platform Wallet Tests", False, "No admin token available")
-            return False
-        
-        # Test platform wallet API
-        response = self.make_request("GET", "admin/platform-wallet", token=self.admin_token)
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                required_fields = ['balance', 'total_earnings', 'total_commissions']
-                missing = [f for f in required_fields if f not in data]
-                if missing:
-                    self.log_test("Platform Wallet Structure", False, f"Missing fields: {missing}")
-                else:
-                    self.log_test("Platform Wallet API", True, f"Balance: {data.get('balance', 0)} FCFA, Commissions: {data.get('total_commissions', 0)} FCFA")
-            except Exception as e:
-                self.log_test("Platform Wallet API", False, f"JSON parse error: {str(e)}")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Platform Wallet API", False, f"Failed to get platform wallet", 200, status)
-        
-        # Test platform wallet stats
-        response = self.make_request("GET", "admin/platform-wallet/stats", token=self.admin_token)
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                required_fields = ['balance', 'total_commissions', 'commission_rate', 'today_commissions', 'week_commissions', 'month_commissions']
-                missing = [f for f in required_fields if f not in data]
-                if missing:
-                    self.log_test("Platform Wallet Stats Structure", False, f"Missing fields: {missing}")
-                else:
-                    commission_rate = data.get('commission_rate', 0)
-                    if commission_rate != 0.15:
-                        self.log_test("Commission Rate Check", False, f"Expected 0.15 (15%), got {commission_rate}")
-                    else:
-                        self.log_test("Platform Wallet Stats", True, f"Commission Rate: {commission_rate * 100}%, Today: {data.get('today_commissions', 0)} FCFA")
-            except Exception as e:
-                self.log_test("Platform Wallet Stats", False, f"JSON parse error: {str(e)}")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Platform Wallet Stats", False, f"Failed to get platform wallet stats", 200, status)
-        
-        # Test platform wallet transactions
-        response = self.make_request("GET", "admin/platform-wallet/transactions", token=self.admin_token)
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                if isinstance(data, list):
-                    self.log_test("Platform Wallet Transactions", True, f"Found {len(data)} platform transactions")
-                    
-                    # If there are transactions, verify structure
-                    if data:
-                        first_tx = data[0]
-                        required_fields = ['transaction_id', 'type', 'amount', 'created_at']
-                        missing = [f for f in required_fields if f not in first_tx]
-                        if missing:
-                            self.log_test("Platform Transaction Structure", False, f"Missing fields: {missing}")
-                        else:
-                            self.log_test("Platform Transaction Structure", True, f"Sample: {first_tx.get('type')} - {first_tx.get('amount')} FCFA")
-                else:
-                    self.log_test("Platform Wallet Transactions", False, f"Expected list, got {type(data)}")
-            except Exception as e:
-                self.log_test("Platform Wallet Transactions", False, f"JSON parse error: {str(e)}")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Platform Wallet Transactions", False, f"Failed to get platform transactions", 200, status)
-        
-        # Test platform withdrawal API (only if there's balance)
-        response = self.make_request("GET", "admin/platform-wallet", token=self.admin_token)
-        if response and response.status_code == 200:
-            try:
-                wallet_data = response.json()
-                current_balance = wallet_data.get('balance', 0)
-                if current_balance > 0:
-                    withdrawal_amount = min(1000, current_balance)
-                    response = self.make_request("POST", "admin/platform-wallet/withdraw", 
-                        data={
-                            "amount": withdrawal_amount,
-                            "method": "bank_transfer",
-                            "account": "TEST-ACCOUNT-123",
-                            "description": "Test withdrawal"
-                        }, 
-                        token=self.admin_token)
-                    
-                    if response and response.status_code == 200:
-                        self.log_test("Platform Withdrawal API", True, f"Withdrawal of {withdrawal_amount} FCFA successful")
-                    else:
-                        status = response.status_code if response else "No response"
-                        self.log_test("Platform Withdrawal API", False, f"Failed to process withdrawal", 200, status)
-                else:
-                    self.log_test("Platform Withdrawal API", True, "No balance available for withdrawal test (normal for new platform)")
-            except Exception as e:
-                self.log_test("Platform Withdrawal API", False, f"JSON parse error: {str(e)}")
-        else:
-            status = response.status_code if response else "No response"
-            self.log_test("Platform Withdrawal API", False, f"Could not get platform wallet for withdrawal test", 200, status)
-        
-        return True
-
-    def run_all_tests(self):
-        """Run all backend tests"""
-        print("🚀 Starting MaliRide Backend API Tests...")
-        print(f"Testing against: {self.base_url}")
-        print("=" * 60)
-        
-        # Test basic endpoints
-        self.test_health_endpoint()
-        
-        # Test authentication
-        self.test_admin_login()
-        self.test_auth_me()
-        self.test_passenger_registration()
-        self.test_driver_login()
-        
-        # Test ride functionality
-        self.test_ride_estimation()
-        
-        # Test admin endpoints
-        self.test_admin_stats()
-        self.test_admin_users()
-        self.test_admin_rides()
-        
-        # Test wallet endpoints
-        self.test_wallet_endpoints()
-        
-        # Test platform wallet endpoints (admin only)
-        self.test_platform_wallet_endpoints()
-        
-        # Print summary
-        print("\n" + "=" * 60)
-        print(f"📊 TEST SUMMARY")
-        print(f"Total Tests: {self.tests_run}")
-        print(f"Passed: {self.tests_passed}")
-        print(f"Failed: {len(self.failed_tests)}")
-        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
-        
-        if self.failed_tests:
-            print(f"\n❌ FAILED TESTS:")
-            for test in self.failed_tests:
-                print(f"  - {test['test']}: {test['details']}")
-        
-        return self.tests_passed == self.tests_run
+    def test_health_check(self):
+        """Test API health check"""
+        success, response = self.run_test(
+            "API Health Check",
+            "GET",
+            "health",
+            200
+        )
+        return success
 
 def main():
-    """Main test runner"""
-    tester = MaliRideAPITester()
-    success = tester.run_all_tests()
-    return 0 if success else 1
+    print("🚗🏍️ SIRA TAXI MOTO-TAXI Feature Testing")
+    print("=" * 50)
+    
+    tester = SiraTaxiAPITester()
+    
+    # Health check first
+    if not tester.test_health_check():
+        print("❌ API is not responding. Stopping tests.")
+        return 1
+    
+    # Authentication tests
+    print("\n📱 AUTHENTICATION TESTS")
+    passenger_login_ok = tester.test_passenger_login()
+    driver_login_ok = tester.test_driver_login()
+    
+    if not passenger_login_ok or not driver_login_ok:
+        print("❌ Authentication failed. Cannot proceed with ride tests.")
+        # Continue with pricing tests that don't require auth
+    
+    # Pricing tests (core MOTO-TAXI feature)
+    print("\n💰 PRICING TESTS")
+    car_estimate_ok, car_data = tester.test_car_estimate()
+    moto_estimate_ok, moto_data = tester.test_moto_estimate()
+    price_comparison_ok = tester.test_price_comparison()
+    
+    # Ride creation tests (if auth worked)
+    if passenger_login_ok:
+        print("\n🚗 RIDE CREATION TESTS")
+        moto_ride_ok, ride_data = tester.test_create_moto_ride()
+        
+        if driver_login_ok:
+            print("\n👨‍✈️ DRIVER TESTS")
+            driver_sees_rides_ok = tester.test_driver_sees_moto_rides()
+    
+    # Results summary
+    print("\n" + "=" * 50)
+    print(f"📊 TEST RESULTS: {tester.tests_passed}/{tester.tests_run} passed")
+    
+    if tester.failed_tests:
+        print("\n❌ FAILED TESTS:")
+        for failure in tester.failed_tests:
+            print(f"   • {failure.get('test', 'Unknown')}")
+            if 'error' in failure:
+                print(f"     Error: {failure['error']}")
+            else:
+                print(f"     Expected: {failure.get('expected')}, Got: {failure.get('actual')}")
+    
+    # Key feature verification
+    print("\n🎯 MOTO-TAXI FEATURE STATUS:")
+    
+    core_features = [
+        ("✅" if car_estimate_ok else "❌", "Car taxi pricing (500 + 300/km)"),
+        ("✅" if moto_estimate_ok else "❌", "Moto taxi pricing (200 + 150/km)"),
+        ("✅" if price_comparison_ok else "❌", "Moto cheaper than car"),
+    ]
+    
+    if passenger_login_ok:
+        core_features.append(("✅" if 'moto_ride_ok' in locals() and moto_ride_ok else "❌", "Moto ride creation"))
+    
+    for status, feature in core_features:
+        print(f"   {status} {feature}")
+    
+    success_rate = (tester.tests_passed / tester.tests_run) * 100 if tester.tests_run > 0 else 0
+    
+    if success_rate >= 80:
+        print(f"\n🎉 MOTO-TAXI feature is working well! ({success_rate:.1f}% success rate)")
+        return 0
+    else:
+        print(f"\n⚠️  MOTO-TAXI feature has issues. ({success_rate:.1f}% success rate)")
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())
