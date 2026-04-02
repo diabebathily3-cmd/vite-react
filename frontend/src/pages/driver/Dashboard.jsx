@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, MapPin, Clock, DollarSign, Star, MessageCircle, 
-  Power, Menu, X, LogOut, User, Navigation, Check, Phone
+  Power, Menu, X, LogOut, User, Navigation, Check, Phone, UserCircle
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
+import DriverProfile from "./Profile";
 
 // Map component
 const MapView = ({ rideLocation, driverLocation }) => {
@@ -32,6 +33,7 @@ const DriverDashboard = () => {
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [isOnline, setIsOnline] = useState(user?.is_online || false);
   const [activeRide, setActiveRide] = useState(null);
   const [pendingRides, setPendingRides] = useState([]);
@@ -200,6 +202,11 @@ const DriverDashboard = () => {
     await logout();
     navigate("/");
   };
+
+  // Show profile page
+  if (showProfile) {
+    return <DriverProfile onClose={() => setShowProfile(false)} />;
+  }
 
   if (loading) {
     return (
@@ -472,6 +479,18 @@ const DriverDashboard = () => {
             </div>
             
             <nav className="p-4">
+              <button
+                onClick={() => {
+                  setShowProfile(true);
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 p-3 hover:bg-[#FFBE00] border-b border-gray-200 bg-gray-50"
+                data-testid="menu-profile-btn"
+              >
+                <UserCircle className="w-5 h-5" />
+                <span className="font-bold">Mon Profil</span>
+              </button>
+              
               <button
                 onClick={() => {
                   setShowVehicleModal(true);

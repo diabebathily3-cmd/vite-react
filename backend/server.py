@@ -399,6 +399,66 @@ async def update_vehicle_info(vehicle_info: dict, user: dict = Depends(get_curre
     )
     return {"message": "Informations véhicule mises à jour"}
 
+@api_router.put("/users/profile")
+async def update_profile(profile_data: dict, user: dict = Depends(get_current_user)):
+    """Update user profile - different fields for drivers vs passengers"""
+    update_fields = {}
+    
+    # Common fields
+    if "name" in profile_data:
+        update_fields["name"] = profile_data["name"]
+    if "phone" in profile_data:
+        update_fields["phone"] = profile_data["phone"]
+    
+    # Driver-specific fields
+    if user["role"] == "driver":
+        if "documents" in profile_data:
+            update_fields["documents"] = profile_data["documents"]
+        if "bio" in profile_data:
+            update_fields["bio"] = profile_data["bio"]
+    
+    if update_fields:
+        await db.users.update_one(
+            {"user_id": user["user_id"]},
+            {"$set": update_fields}
+        )
+    
+    # Return updated user
+    updated_user = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0, "password": 0})
+    return updated_user
+
+@api_router.get("/users/profile/{user_id}")
+async def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a user's public profile - shows different info for drivers"""
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password": 0})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    
+    # For drivers, return full profile
+    if user["role"] == "driver":
+        return {
+            "user_id": user["user_id"],
+            "name": user["name"],
+            "picture": user.get("picture"),
+            "role": user["role"],
+            "rating": user.get("rating", 5.0),
+            "total_rides": user.get("total_rides", 0),
+            "vehicle_info": user.get("vehicle_info"),
+            "member_since": user.get("created_at"),
+            "is_verified": bool(user.get("documents", {}).get("license"))
+        }
+    
+    # For passengers, return basic profile
+    return {
+        "user_id": user["user_id"],
+        "name": user["name"],
+        "picture": user.get("picture"),
+        "role": user["role"],
+        "rating": user.get("rating", 5.0),
+        "total_rides": user.get("total_rides", 0)
+    }
+
 # ====================== RIDE ROUTES ======================
 
 @api_router.post("/rides/estimate")
