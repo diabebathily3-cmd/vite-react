@@ -43,6 +43,7 @@ Application de transport (ride-hailing) comme Uber pour les taxis au Mali avec t
 13. **Bug fix: app bloquée après acceptation** - Boucle infinie dans driver Dashboard useEffect (activeRide dans deps), corrigé avec useRef pattern. Flux complet vérifié: pending → accepted → arrived → in_progress → completed
 14. **Notifications sonores** - Cloche notification chauffeur (badge + son + dropdown courses disponibles + bouton ACCEPTER), Cloche notification passager (alertes statut : chauffeur trouvé, arrivé, en cours, terminé)
 15. **Onglet Paiements Admin** - Gestion paiements chauffeurs : table portefeuilles, cards résumé (total à payer/versé), modal de paiement, historique des paiements. Endpoints: GET /api/admin/drivers/wallets, POST /api/admin/drivers/{id}/pay, GET /api/admin/payments/history
+16. **GPS & Carte OpenStreetMap** - Remplacement des cartes statiques par de vraies cartes interactives Leaflet/OpenStreetMap. Géolocalisation native du navigateur (watchPosition). Marqueurs colorés: vert=pickup, rouge=dropoff, bleu=passager, jaune=chauffeur. Position envoyée au backend via PUT /api/users/location. Carte centrée sur Bamako par défaut.
 
 ## Architecture
 ```
