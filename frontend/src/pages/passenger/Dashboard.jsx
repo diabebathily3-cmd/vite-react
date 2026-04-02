@@ -10,51 +10,101 @@ import {
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
 import PassengerProfile from "./Profile";
 
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png";
 
-// Map component with Leaflet
-const MapView = ({ pickup, dropoff, driverLocation }) => {
+// Fix default Leaflet marker icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+const pickupIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:24px;height:24px;background:#22c55e;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.4);"></div>`,
+  iconSize: [24, 24], iconAnchor: [12, 12]
+});
+const dropoffIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:24px;height:24px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.4);"></div>`,
+  iconSize: [24, 24], iconAnchor: [12, 12]
+});
+const driverIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:32px;height:32px;background:#FFBE00;border:3px solid #000;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><path d="M5 17h14v-5H5v5zm2 2a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4zM3 12l2-6h14l2 6"/></svg></div>`,
+  iconSize: [32, 32], iconAnchor: [16, 16]
+});
+const myLocIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:20px;height:20px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 6px rgba(59,130,246,.25);"></div>`,
+  iconSize: [20, 20], iconAnchor: [10, 10]
+});
+
+// Auto-fit map to markers
+const FitBounds = ({ positions }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (positions.length > 0) {
+      const bounds = L.latLngBounds(positions.map(p => [p.lat, p.lng]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+  }, [positions, map]);
+  return null;
+};
+
+// Map component with Leaflet + OpenStreetMap
+const MapView = ({ pickup, dropoff, driverLocation, myLocation }) => {
+  const center = myLocation ? [myLocation.lat, myLocation.lng] 
+    : pickup ? [pickup.lat, pickup.lng] 
+    : [12.6392, -8.0029]; // Bamako center
+
+  const positions = [
+    ...(pickup ? [pickup] : []),
+    ...(dropoff ? [dropoff] : []),
+    ...(driverLocation ? [driverLocation] : []),
+    ...(myLocation ? [myLocation] : [])
+  ];
+
   return (
-    <div className="w-full h-full bg-gray-200 relative">
-      <div 
-        className="w-full h-full"
-        style={{
-          backgroundImage: `url('https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${pickup?.lng || -8.0029},${pickup?.lat || 12.6392},13,0/800x600?access_token=pk.placeholder')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
+    <div className="w-full h-full relative" data-testid="map-container">
+      <MapContainer
+        center={center}
+        zoom={14}
+        style={{ width: "100%", height: "100%" }}
+        zoomControl={false}
       >
-        {/* Fallback map visualization */}
-        <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
-          <div className="text-center">
-            <MapPin className="w-16 h-16 mx-auto text-[#FFBE00] mb-4" />
-            <p className="text-lg font-medium">Carte de Bamako</p>
-            {pickup && (
-              <p className="text-sm text-gray-600 mt-2">
-                {pickup.address || "Point de départ sélectionné"}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      {/* Floating location markers */}
-      {pickup && (
-        <div className="absolute top-4 left-4 brutalist-card bg-white p-3 max-w-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm font-medium truncate">{pickup.address || "Départ"}</span>
-          </div>
-        </div>
-      )}
-      {dropoff && (
-        <div className="absolute top-16 left-4 brutalist-card bg-white p-3 max-w-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span className="text-sm font-medium truncate">{dropoff.address || "Arrivée"}</span>
-          </div>
-        </div>
-      )}
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {positions.length > 1 && <FitBounds positions={positions} />}
+
+        {myLocation && (
+          <Marker position={[myLocation.lat, myLocation.lng]} icon={myLocIcon}>
+            <Popup>Ma position</Popup>
+          </Marker>
+        )}
+        {pickup && (
+          <Marker position={[pickup.lat, pickup.lng]} icon={pickupIcon}>
+            <Popup>{pickup.address || "Départ"}</Popup>
+          </Marker>
+        )}
+        {dropoff && (
+          <Marker position={[dropoff.lat, dropoff.lng]} icon={dropoffIcon}>
+            <Popup>{dropoff.address || "Arrivée"}</Popup>
+          </Marker>
+        )}
+        {driverLocation && (
+          <Marker position={[driverLocation.lat, driverLocation.lng]} icon={driverIcon}>
+            <Popup>Chauffeur</Popup>
+          </Marker>
+        )}
+      </MapContainer>
     </div>
   );
 };
@@ -86,10 +136,29 @@ const PassengerDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const notifAudioRef = useRef(null);
+  
+  // GPS state
+  const [myLocation, setMyLocation] = useState(null);
 
   useEffect(() => {
     notifAudioRef.current = new Audio("/notification.wav");
     notifAudioRef.current.volume = 0.7;
+  }, []);
+
+  // Get user's GPS position
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setMyLocation(loc);
+        // Send location to backend silently
+        axios.put(`${API}/users/location`, loc).catch(() => {});
+      },
+      (err) => console.log("GPS error:", err.message),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   // Bamako locations for demo
@@ -356,7 +425,7 @@ const PassengerDashboard = () => {
 
       {/* Map Area */}
       <div className="flex-1 relative">
-        <MapView pickup={pickup} dropoff={dropoff} driverLocation={activeRide?.driver?.current_location} />
+        <MapView pickup={pickup} dropoff={dropoff} driverLocation={activeRide?.driver?.current_location} myLocation={myLocation} />
         
         {/* Bottom Sheet */}
         <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-black slide-up pb-14">

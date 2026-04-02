@@ -11,23 +11,90 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from 
 import DriverProfile from "./Profile";
 import DriverWallet from "./Wallet";
 
+// Map component
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png";
 
-// Map component
-const MapView = ({ rideLocation, driverLocation }) => {
+// Fix default Leaflet marker icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
+const pickupIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:24px;height:24px;background:#22c55e;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.4);"></div>`,
+  iconSize: [24, 24], iconAnchor: [12, 12]
+});
+const dropoffIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:24px;height:24px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.4);"></div>`,
+  iconSize: [24, 24], iconAnchor: [12, 12]
+});
+const myLocIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:22px;height:22px;background:#FFBE00;border:3px solid #000;border-radius:50%;box-shadow:0 0 0 6px rgba(255,190,0,.25);"></div>`,
+  iconSize: [22, 22], iconAnchor: [11, 11]
+});
+
+// Auto-fit map to markers
+const FitBounds = ({ positions }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (positions.length > 0) {
+      const bounds = L.latLngBounds(positions.map(p => [p.lat, p.lng]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+  }, [positions, map]);
+  return null;
+};
+
+const MapView = ({ rideLocation, dropoffLocation, myLocation }) => {
+  const center = myLocation ? [myLocation.lat, myLocation.lng]
+    : rideLocation ? [rideLocation.lat, rideLocation.lng]
+    : [12.6392, -8.0029];
+
+  const positions = [
+    ...(rideLocation ? [rideLocation] : []),
+    ...(dropoffLocation ? [dropoffLocation] : []),
+    ...(myLocation ? [myLocation] : [])
+  ];
+
   return (
-    <div className="w-full h-full bg-gray-200 relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
-        <div className="text-center">
-          <Navigation className="w-16 h-16 mx-auto text-[#FFBE00] mb-4" />
-          <p className="text-lg font-medium">Navigation Active</p>
-          {rideLocation && (
-            <p className="text-sm text-gray-600 mt-2">
-              Destination: {rideLocation.address}
-            </p>
-          )}
-        </div>
-      </div>
+    <div className="w-full h-full relative" data-testid="driver-map-container">
+      <MapContainer
+        center={center}
+        zoom={14}
+        style={{ width: "100%", height: "100%" }}
+        zoomControl={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {positions.length > 1 && <FitBounds positions={positions} />}
+
+        {myLocation && (
+          <Marker position={[myLocation.lat, myLocation.lng]} icon={myLocIcon}>
+            <Popup>Ma position</Popup>
+          </Marker>
+        )}
+        {rideLocation && (
+          <Marker position={[rideLocation.lat, rideLocation.lng]} icon={pickupIcon}>
+            <Popup>{rideLocation.address || "Point de prise en charge"}</Popup>
+          </Marker>
+        )}
+        {dropoffLocation && (
+          <Marker position={[dropoffLocation.lat, dropoffLocation.lng]} icon={dropoffIcon}>
+            <Popup>{dropoffLocation.address || "Destination"}</Popup>
+          </Marker>
+        )}
+      </MapContainer>
     </div>
   );
 };
@@ -67,9 +134,28 @@ const DriverDashboard = () => {
   const prevPendingCountRef = useRef(0);
   const notifAudioRef = useRef(null);
 
+  // GPS state
+  const [myLocation, setMyLocation] = useState(null);
+
   useEffect(() => {
     notifAudioRef.current = new Audio("/notification.wav");
     notifAudioRef.current.volume = 0.7;
+  }, []);
+
+  // Get driver's GPS position and send to backend
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setMyLocation(loc);
+        // Send location to backend for live tracking
+        axios.put(`${API}/users/location`, loc).catch(() => {});
+      },
+      (err) => console.log("GPS error:", err.message),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   const activeRideRef = useRef(activeRide);
@@ -354,7 +440,8 @@ const DriverDashboard = () => {
       <div className="flex-1 relative">
         <MapView 
           rideLocation={activeRide?.pickup_location} 
-          driverLocation={null}
+          dropoffLocation={activeRide?.dropoff_location}
+          myLocation={myLocation}
         />
         
         {/* Stats Bar */}

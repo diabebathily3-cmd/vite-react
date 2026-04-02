@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import 'leaflet/dist/leaflet.css';
+
 
 @tailwind base;
 @tailwind components;
@@ -221,4 +223,12 @@ code {
     [data-debug-wrapper="true"] {
         display: contents !important;
     }
+}
+
+
+/* Leaflet map fixes */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
 }
