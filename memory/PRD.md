@@ -36,8 +36,9 @@ Application de transport (ride-hailing) comme Uber pour les taxis au Mali avec t
 6. Deployment Guide & Backend Optimizations
 7. Distinct Passenger Profile
 8. MOTO-TAXI vehicle option & pricing logic
-9. **Logo visibility enhancement** - Logo now prominent on all pages (header, hero, auth, dashboards, footer, loading screens)
-10. **PWA setup** - manifest.json, service-worker.js, PWA icons (192x192, 512x512), favicon, install banner
+9. Logo visibility enhancement - Logo prominent on all pages
+10. PWA setup - manifest.json, service-worker.js, icons, favicon, install banner
+11. **Page Contact / À propos** - Formulaire de contact (POST /api/contact), coordonnées (contact@sirataxi.ml), section À propos, liens header + footer
 
 ## Architecture
 ```
