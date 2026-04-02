@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, Star, Camera, FileText, Shield, Phone, Mail, 
-  MapPin, Calendar, Award, TrendingUp, ArrowLeft, Edit, Save, X
+  MapPin, Calendar, Award, TrendingUp, ArrowLeft, Edit, Save, X, Lock, Eye, EyeOff
 } from "lucide-react";
 
 const DriverProfile = ({ onClose }) => {
@@ -38,6 +38,38 @@ const DriverProfile = ({ onClose }) => {
     registration: user?.documents?.registration || false,
     photo_id: user?.documents?.photo_id || false
   });
+
+  // Password change
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [passwordData, setPasswordData] = useState({ current: "", new: "", confirm: "" });
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (passwordData.new !== passwordData.confirm) {
+      toast.error("Les mots de passe ne correspondent pas");
+      return;
+    }
+    if (passwordData.new.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+    setPwLoading(true);
+    try {
+      await axios.put(`${API}/users/password`, {
+        current_password: passwordData.current,
+        new_password: passwordData.new
+      });
+      toast.success("Mot de passe modifié avec succès !");
+      setPasswordData({ current: "", new: "", confirm: "" });
+      setShowPasswordSection(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Erreur lors du changement de mot de passe");
+    } finally {
+      setPwLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchHistory();
@@ -344,6 +376,84 @@ const DriverProfile = ({ onClose }) => {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Password Change */}
+        <div className="brutalist-card bg-white p-6 mb-4" data-testid="password-section">
+          <button
+            onClick={() => setShowPasswordSection(!showPasswordSection)}
+            className="w-full flex items-center justify-between"
+          >
+            <h2 className="font-['Outfit'] font-bold text-lg flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              MODIFIER LE MOT DE PASSE
+            </h2>
+            <span className="text-gray-400 text-sm">{showPasswordSection ? "Fermer" : "Ouvrir"}</span>
+          </button>
+
+          {showPasswordSection && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="text-sm text-gray-600 block mb-1">Mot de passe actuel</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPw ? "text" : "password"}
+                    value={passwordData.current}
+                    onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                    className="brutalist-input w-full p-3 pr-12"
+                    placeholder="••••••••"
+                    data-testid="current-password-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPw(!showCurrentPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  >
+                    {showCurrentPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 block mb-1">Nouveau mot de passe</label>
+                <div className="relative">
+                  <input
+                    type={showNewPw ? "text" : "password"}
+                    value={passwordData.new}
+                    onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                    className="brutalist-input w-full p-3 pr-12"
+                    placeholder="••••••••"
+                    data-testid="new-password-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPw(!showNewPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  >
+                    {showNewPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 block mb-1">Confirmer le nouveau mot de passe</label>
+                <input
+                  type="password"
+                  value={passwordData.confirm}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                  className="brutalist-input w-full p-3"
+                  placeholder="••••••••"
+                  data-testid="confirm-password-input"
+                />
+              </div>
+              <button
+                onClick={handleChangePassword}
+                disabled={pwLoading || !passwordData.current || !passwordData.new || !passwordData.confirm}
+                className="w-full bg-[#FFBE00] border border-black py-3 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all disabled:opacity-50"
+                data-testid="change-password-btn"
+              >
+                {pwLoading ? "MODIFICATION EN COURS..." : "CHANGER LE MOT DE PASSE"}
+              </button>
             </div>
           )}
         </div>

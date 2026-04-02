@@ -459,6 +459,31 @@ async def update_profile(profile_data: dict, user: dict = Depends(get_current_us
     updated_user = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0, "password": 0})
     return updated_user
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@api_router.put("/users/password")
+async def change_password(data: ChangePasswordRequest, user: dict = Depends(get_current_user)):
+    """Change user password"""
+    # Verify current password
+    db_user = await db.users.find_one({"user_id": user["user_id"]})
+    if not db_user or not verify_password(data.current_password, db_user.get("password", "")):
+        raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")
+    
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Le nouveau mot de passe doit contenir au moins 6 caractères")
+    
+    new_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"password": new_hash}}
+    )
+    logger.info(f"Password changed for user {user['user_id']}")
+    return {"status": "success", "message": "Mot de passe modifié avec succès"}
+
+
+
 @api_router.get("/users/profile/{user_id}")
 async def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user)):
     """Get a user's public profile - shows different info for drivers"""
