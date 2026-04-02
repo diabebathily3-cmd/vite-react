@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
@@ -61,6 +61,11 @@ const DriverDashboard = () => {
   const [newMessage, setNewMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
 
+  const activeRideRef = useRef(activeRide);
+  useEffect(() => {
+    activeRideRef.current = activeRide;
+  }, [activeRide]);
+
   const fetchActiveRide = useCallback(async () => {
     try {
       const response = await axios.get(`${API}/rides/active`);
@@ -70,7 +75,11 @@ const DriverDashboard = () => {
           fetchMessages(response.data.ride_id);
         }
       } else {
-        setActiveRide(null);
+        if (activeRideRef.current) {
+          setActiveRide(null);
+          fetchHistory();
+          fetchWalletBalance();
+        }
       }
     } catch (error) {
       console.error("Error fetching active ride:", error);
@@ -125,7 +134,7 @@ const DriverDashboard = () => {
       await fetchActiveRide();
       await fetchHistory();
       await fetchWalletBalance();
-      if (isOnline && !activeRide) {
+      if (isOnline) {
         await fetchPendingRides();
       }
       setLoading(false);
@@ -134,16 +143,14 @@ const DriverDashboard = () => {
     
     // Poll for updates
     const interval = setInterval(() => {
-      if (activeRide) {
-        fetchActiveRide();
-        fetchMessages(activeRide.ride_id);
-      } else if (isOnline) {
+      fetchActiveRide();
+      if (isOnline && !activeRideRef.current) {
         fetchPendingRides();
       }
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [fetchActiveRide, fetchPendingRides, fetchHistory, isOnline, activeRide]);
+  }, [fetchActiveRide, fetchPendingRides, fetchHistory, fetchWalletBalance, isOnline]);
 
   const toggleOnlineStatus = async () => {
     try {
