@@ -111,6 +111,22 @@ class Rating(BaseModel):
     comment: Optional[str] = None
     created_at: datetime
 
+class WalletTransaction(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    transaction_id: str
+    user_id: str
+    type: Literal["earning", "withdrawal", "bonus", "refund"]
+    amount: float
+    description: str
+    ride_id: Optional[str] = None
+    status: Literal["completed", "pending", "failed"] = "completed"
+    created_at: datetime
+
+class WithdrawalRequest(BaseModel):
+    amount: float
+    method: Literal["orange_money", "moov_money", "bank_transfer"] = "orange_money"
+    phone_or_account: str
+
 # ====================== HELPERS ======================
 
 def hash_password(password: str) -> str:
@@ -622,17 +638,56 @@ async def update_ride_status(ride_id: str, status: dict, user: dict = Depends(ge
         update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
         update_data["final_price"] = ride["estimated_price"]
         
-        # Update driver earnings
+        # Update driver earnings and wallet
         if ride.get("driver_id"):
+            driver_id = ride["driver_id"]
+            ride_earnings = ride["estimated_price"]
+            
+            # Update user earnings
             await db.users.update_one(
-                {"user_id": ride["driver_id"]},
+                {"user_id": driver_id},
                 {
                     "$inc": {
-                        "earnings": ride["estimated_price"],
+                        "earnings": ride_earnings,
                         "total_rides": 1
                     }
                 }
             )
+            
+            # Update or create wallet
+            wallet = await db.wallets.find_one({"user_id": driver_id})
+            if wallet:
+                await db.wallets.update_one(
+                    {"user_id": driver_id},
+                    {
+                        "$inc": {
+                            "balance": ride_earnings,
+                            "total_earnings": ride_earnings
+                        }
+                    }
+                )
+            else:
+                await db.wallets.insert_one({
+                    "wallet_id": f"wallet_{uuid.uuid4().hex[:12]}",
+                    "user_id": driver_id,
+                    "balance": ride_earnings,
+                    "total_earnings": ride_earnings,
+                    "total_withdrawn": 0,
+                    "pending_withdrawal": 0,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
+            
+            # Create earning transaction
+            await db.wallet_transactions.insert_one({
+                "transaction_id": f"tx_{uuid.uuid4().hex[:12]}",
+                "user_id": driver_id,
+                "type": "earning",
+                "amount": ride_earnings,
+                "description": f"Course {ride['pickup_location'].get('address', '')} → {ride['dropoff_location'].get('address', '')}",
+                "ride_id": ride_id,
+                "status": "completed",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
         
         # Update passenger ride count
         await db.users.update_one(
@@ -763,6 +818,158 @@ async def create_rating(rating_data: dict, user: dict = Depends(get_current_user
     
     rating_doc.pop("_id", None)
     return rating_doc
+
+# ====================== WALLET ROUTES ======================
+
+@api_router.get("/wallet")
+async def get_wallet(user: dict = Depends(get_current_user)):
+    """Get driver's wallet info"""
+    if user["role"] != "driver":
+        raise HTTPException(status_code=403, detail="Réservé aux chauffeurs")
+    
+    # Get wallet balance
+    wallet = await db.wallets.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not wallet:
+        # Create wallet if not exists
+        wallet = {
+            "wallet_id": f"wallet_{uuid.uuid4().hex[:12]}",
+            "user_id": user["user_id"],
+            "balance": 0,
+            "total_earnings": 0,
+            "total_withdrawn": 0,
+            "pending_withdrawal": 0,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.wallets.insert_one(wallet)
+        wallet.pop("_id", None)
+    
+    return wallet
+
+@api_router.get("/wallet/transactions")
+async def get_wallet_transactions(user: dict = Depends(get_current_user), limit: int = 50):
+    """Get wallet transaction history"""
+    if user["role"] != "driver":
+        raise HTTPException(status_code=403, detail="Réservé aux chauffeurs")
+    
+    transactions = await db.wallet_transactions.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(limit)
+    
+    return transactions
+
+@api_router.post("/wallet/withdraw")
+async def request_withdrawal(withdrawal: WithdrawalRequest, user: dict = Depends(get_current_user)):
+    """Request a withdrawal from wallet"""
+    if user["role"] != "driver":
+        raise HTTPException(status_code=403, detail="Réservé aux chauffeurs")
+    
+    # Get wallet
+    wallet = await db.wallets.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Portefeuille non trouvé")
+    
+    if withdrawal.amount <= 0:
+        raise HTTPException(status_code=400, detail="Montant invalide")
+    
+    if withdrawal.amount > wallet["balance"]:
+        raise HTTPException(status_code=400, detail="Solde insuffisant")
+    
+    # Minimum withdrawal amount
+    if withdrawal.amount < 1000:
+        raise HTTPException(status_code=400, detail="Montant minimum de retrait: 1000 FCFA")
+    
+    # Create withdrawal request
+    transaction_id = f"tx_{uuid.uuid4().hex[:12]}"
+    transaction = {
+        "transaction_id": transaction_id,
+        "user_id": user["user_id"],
+        "type": "withdrawal",
+        "amount": -withdrawal.amount,
+        "description": f"Retrait vers {withdrawal.method} - {withdrawal.phone_or_account}",
+        "method": withdrawal.method,
+        "phone_or_account": withdrawal.phone_or_account,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.wallet_transactions.insert_one(transaction)
+    
+    # Update wallet
+    await db.wallets.update_one(
+        {"user_id": user["user_id"]},
+        {
+            "$inc": {
+                "balance": -withdrawal.amount,
+                "pending_withdrawal": withdrawal.amount
+            }
+        }
+    )
+    
+    transaction.pop("_id", None)
+    return {
+        "message": "Demande de retrait soumise avec succès",
+        "transaction": transaction,
+        "new_balance": wallet["balance"] - withdrawal.amount
+    }
+
+@api_router.get("/wallet/stats")
+async def get_wallet_stats(user: dict = Depends(get_current_user)):
+    """Get wallet statistics"""
+    if user["role"] != "driver":
+        raise HTTPException(status_code=403, detail="Réservé aux chauffeurs")
+    
+    wallet = await db.wallets.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not wallet:
+        return {
+            "balance": 0,
+            "total_earnings": 0,
+            "total_withdrawn": 0,
+            "pending_withdrawal": 0,
+            "today_earnings": 0,
+            "week_earnings": 0,
+            "month_earnings": 0
+        }
+    
+    # Calculate period earnings
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=now.weekday())
+    month_start = today_start.replace(day=1)
+    
+    # Get earnings transactions
+    all_earnings = await db.wallet_transactions.find({
+        "user_id": user["user_id"],
+        "type": "earning"
+    }, {"_id": 0}).to_list(1000)
+    
+    today_earnings = sum(
+        t["amount"] for t in all_earnings 
+        if datetime.fromisoformat(t["created_at"].replace("Z", "+00:00")) >= today_start
+    )
+    
+    week_earnings = sum(
+        t["amount"] for t in all_earnings 
+        if datetime.fromisoformat(t["created_at"].replace("Z", "+00:00")) >= week_start
+    )
+    
+    month_earnings = sum(
+        t["amount"] for t in all_earnings 
+        if datetime.fromisoformat(t["created_at"].replace("Z", "+00:00")) >= month_start
+    )
+    
+    return {
+        "balance": wallet.get("balance", 0),
+        "total_earnings": wallet.get("total_earnings", 0),
+        "total_withdrawn": wallet.get("total_withdrawn", 0),
+        "pending_withdrawal": wallet.get("pending_withdrawal", 0),
+        "today_earnings": today_earnings,
+        "week_earnings": week_earnings,
+        "month_earnings": month_earnings
+    }
 
 # ====================== ADMIN ROUTES ======================
 

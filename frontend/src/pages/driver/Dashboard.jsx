@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import { useAuth, API } from "../../App";
 import { 
   Car, MapPin, Clock, DollarSign, Star, MessageCircle, 
-  Power, Menu, X, LogOut, User, Navigation, Check, Phone, UserCircle
+  Power, Menu, X, LogOut, User, Navigation, Check, Phone, UserCircle, Wallet
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
 import DriverProfile from "./Profile";
+import DriverWallet from "./Wallet";
 
 // Map component
 const MapView = ({ rideLocation, driverLocation }) => {
@@ -34,11 +35,13 @@ const DriverDashboard = () => {
   const { user, logout, updateUser } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
   const [isOnline, setIsOnline] = useState(user?.is_online || false);
   const [activeRide, setActiveRide] = useState(null);
   const [pendingRides, setPendingRides] = useState([]);
   const [rideHistory, setRideHistory] = useState([]);
   const [earnings, setEarnings] = useState(user?.earnings || 0);
+  const [walletBalance, setWalletBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   
   // Vehicle info
@@ -96,6 +99,15 @@ const DriverDashboard = () => {
     }
   }, []);
 
+  const fetchWalletBalance = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/wallet`);
+      setWalletBalance(response.data.balance || 0);
+    } catch (error) {
+      console.error("Error fetching wallet:", error);
+    }
+  }, []);
+
   const fetchMessages = async (rideId) => {
     try {
       const response = await axios.get(`${API}/chat/${rideId}`);
@@ -110,6 +122,7 @@ const DriverDashboard = () => {
       setLoading(true);
       await fetchActiveRide();
       await fetchHistory();
+      await fetchWalletBalance();
       if (isOnline && !activeRide) {
         await fetchPendingRides();
       }
@@ -208,6 +221,11 @@ const DriverDashboard = () => {
     return <DriverProfile onClose={() => setShowProfile(false)} />;
   }
 
+  // Show wallet page
+  if (showWallet) {
+    return <DriverWallet onClose={() => { setShowWallet(false); fetchWalletBalance(); }} />;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -261,13 +279,21 @@ const DriverDashboard = () => {
         />
         
         {/* Stats Bar */}
-        <div className="absolute top-4 left-4 right-4 flex gap-3">
-          <div className="brutalist-card bg-white p-3 flex-1">
-            <p className="text-xs text-gray-600 uppercase">Revenus du jour</p>
-            <p className="font-['Outfit'] font-black text-xl text-[#FFBE00]">
-              {earnings.toLocaleString()} FCFA
+        <div className="absolute top-4 left-4 right-4 flex gap-2">
+          {/* Wallet Balance - Clickable */}
+          <button
+            onClick={() => setShowWallet(true)}
+            className="brutalist-card bg-[#FFBE00] p-3 flex-1 text-left hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
+            data-testid="wallet-card-btn"
+          >
+            <div className="flex items-center gap-1 mb-1">
+              <Wallet className="w-4 h-4" />
+              <p className="text-xs uppercase font-bold">Portefeuille</p>
+            </div>
+            <p className="font-['Outfit'] font-black text-xl">
+              {walletBalance.toLocaleString()} <span className="text-sm">FCFA</span>
             </p>
-          </div>
+          </button>
           <div className="brutalist-card bg-white p-3 flex-1">
             <p className="text-xs text-gray-600 uppercase">Courses</p>
             <p className="font-['Outfit'] font-black text-xl">
@@ -472,13 +498,40 @@ const DriverDashboard = () => {
               </button>
             </div>
             
-            {/* Earnings Summary */}
+            {/* Wallet Summary */}
             <div className="p-4 border-b border-black bg-[#FFBE00]">
-              <p className="text-sm font-medium">Revenus totaux</p>
-              <p className="font-['Outfit'] font-black text-3xl">{earnings.toLocaleString()} FCFA</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium flex items-center gap-1">
+                    <Wallet className="w-4 h-4" /> Portefeuille
+                  </p>
+                  <p className="font-['Outfit'] font-black text-3xl">{walletBalance.toLocaleString()} FCFA</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowWallet(true);
+                    setMenuOpen(false);
+                  }}
+                  className="px-3 py-2 bg-black text-white text-sm font-bold"
+                >
+                  VOIR
+                </button>
+              </div>
             </div>
             
             <nav className="p-4">
+              <button
+                onClick={() => {
+                  setShowWallet(true);
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 p-3 hover:bg-[#FFBE00] border-b border-gray-200 bg-green-50"
+                data-testid="menu-wallet-btn"
+              >
+                <Wallet className="w-5 h-5 text-green-600" />
+                <span className="font-bold">Mon Portefeuille</span>
+              </button>
+              
               <button
                 onClick={() => {
                   setShowProfile(true);
