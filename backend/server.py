@@ -29,7 +29,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 168  # 7 days
 
 # Create the main app
-app = FastAPI(title="MaliRide API")
+app = FastAPI(title="SIRA TAXI API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -1251,11 +1251,11 @@ async def toggle_user_status(user_id: str, user: dict = Depends(get_current_user
 
 @api_router.get("/")
 async def root():
-    return {"message": "MaliRide API - Bienvenue!"}
+    return {"message": "SIRA TAXI API - Bienvenue!"}
 
 @api_router.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "MaliRide API"}
+    return {"status": "healthy", "service": "SIRA TAXI API"}
 
 # Include the router in the main app
 app.include_router(api_router)

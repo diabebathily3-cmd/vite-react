@@ -10,6 +10,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import PlatformWallet from "./PlatformWallet";
 
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png";
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -114,13 +116,8 @@ const AdminDashboard = () => {
       {/* Header */}
       <header className="bg-black text-white px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#FFBE00] flex items-center justify-center">
-            <Car className="w-6 h-6 text-black" />
-          </div>
-          <div>
-            <span className="font-['Outfit'] font-bold text-lg">MALIRIDE</span>
-            <span className="text-[#FFBE00] ml-2 text-sm">ADMIN</span>
-          </div>
+          <img src={LOGO_URL} alt="SIRA TAXI" className="h-10 w-auto" />
+          <span className="text-[#FFBE00] text-sm font-bold">ADMIN</span>
         </div>
         
         <div className="flex items-center gap-4">
@@ -174,7 +171,7 @@ const AdminDashboard = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Building className="w-6 h-6 text-[#FFBE00]" />
-                    <span className="text-sm text-gray-400 uppercase tracking-wider">Portefeuille MaliRide</span>
+                    <span className="text-sm text-gray-400 uppercase tracking-wider">Portefeuille SIRA TAXI</span>
                   </div>
                   <p className="font-['Outfit'] font-black text-4xl text-[#FFBE00]">
                     {(platformWallet?.balance || 0).toLocaleString()} <span className="text-xl">FCFA</span>

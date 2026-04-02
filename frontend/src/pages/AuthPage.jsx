@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Car, Mail, Lock, User, Phone, ArrowLeft } from "lucide-react";
+import { Mail, Lock, User, Phone, ArrowLeft } from "lucide-react";
 import { useAuth } from "../App";
 import { toast } from "sonner";
+
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png";
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -62,17 +64,14 @@ const AuthPage = () => {
 
   return (
     <div 
-      className="min-h-screen bg-cover bg-center flex items-center justify-center p-4"
-      style={{
-        backgroundImage: `linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('https://static.prod-images.emergentagent.com/jobs/70074c40-f177-4ede-9853-4ea5d897762e/images/8637e0ebdb64067a6d7e3cf7ad306389b15eb171499406c21b254a285c89925d.png')`
-      }}
+      className="min-h-screen bg-black flex items-center justify-center p-4"
       data-testid="auth-page"
     >
       <div className="w-full max-w-md">
         {/* Back Button */}
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 mb-6 font-medium hover:underline"
+          className="flex items-center gap-2 mb-6 font-medium text-white hover:text-[#FFBE00]"
           data-testid="back-to-home-btn"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -80,13 +79,10 @@ const AuthPage = () => {
         </button>
 
         {/* Auth Card */}
-        <div className="brutalist-card bg-white p-8">
+        <div className="bg-white border border-black p-8 shadow-[4px_4px_0px_0px_rgba(255,190,0,1)]">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-12 h-12 bg-[#FFBE00] border border-black flex items-center justify-center">
-              <Car className="w-7 h-7" />
-            </div>
-            <span className="font-['Outfit'] text-2xl font-black tracking-tight">MALIRIDE</span>
+          <div className="flex items-center justify-center mb-8">
+            <img src={LOGO_URL} alt="SIRA TAXI" className="h-20 w-auto" />
           </div>
 
           {/* Title */}
@@ -94,7 +90,7 @@ const AuthPage = () => {
             {isLogin ? "CONNEXION" : "INSCRIPTION"}
           </h1>
           <p className="text-center text-gray-600 mb-6">
-            {isLogin ? "Connectez-vous à votre compte" : "Créez votre compte MaliRide"}
+            {isLogin ? "Connectez-vous à votre compte" : "Créez votre compte SIRA TAXI"}
           </p>
 
           {/* Google Login */}

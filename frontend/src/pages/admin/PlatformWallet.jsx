@@ -7,6 +7,8 @@ import {
   Clock, CheckCircle, Building, Percent, DollarSign, PieChart
 } from "lucide-react";
 
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png";
+
 const PlatformWallet = ({ onClose }) => {
   const [loading, setLoading] = useState(true);
   const [wallet, setWallet] = useState(null);
@@ -111,8 +113,8 @@ const PlatformWallet = ({ onClose }) => {
             <span>Retour</span>
           </button>
           <h1 className="font-['Outfit'] font-bold text-lg flex items-center gap-2">
-            <Building className="w-5 h-5 text-[#FFBE00]" />
-            PORTEFEUILLE MALIRIDE
+            <img src={LOGO_URL} alt="SIRA TAXI" className="h-8 w-auto" />
+            <span className="text-[#FFBE00]">PORTEFEUILLE</span>
           </h1>
           <div className="w-20"></div>
         </div>
@@ -209,7 +211,7 @@ const PlatformWallet = ({ onClose }) => {
             <div>
               <p className="font-bold text-blue-900">Commission de 15% sur chaque course</p>
               <p className="text-sm text-blue-700">
-                Sur chaque course terminée, MaliRide prélève automatiquement 15% du montant total. 
+                Sur chaque course terminée, SIRA TAXI prélève automatiquement 15% du montant total. 
                 Le reste (85%) est crédité au portefeuille du chauffeur.
               </p>
             </div>

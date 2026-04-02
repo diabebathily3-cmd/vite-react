@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "../../components/ui/drawer";
 
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_uber-mali-drive/artifacts/apw7o3ih_image.png";
+
 // Map component with Leaflet
 const MapView = ({ pickup, dropoff, driverLocation }) => {
   return (
@@ -248,10 +250,7 @@ const PassengerDashboard = () => {
       {/* Header */}
       <header className="border-b border-black px-4 py-3 flex items-center justify-between bg-white z-10">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#FFBE00] border border-black flex items-center justify-center">
-            <Car className="w-4 h-4" />
-          </div>
-          <span className="font-['Outfit'] font-bold">MALIRIDE</span>
+          <img src={LOGO_URL} alt="SIRA TAXI" className="h-10 w-auto" />
         </div>
         
         <button

@@ -19,7 +19,7 @@ async def seed_admin():
     client = AsyncIOMotorClient(mongo_url)
     db = client[db_name]
     
-    admin_email = "admin@maliride.ml"
+    admin_email = "admin@sirataxi.ml"
     admin_password = "Admin123!"
     
     # Check if admin exists
@@ -35,7 +35,7 @@ async def seed_admin():
     admin_doc = {
         "user_id": f"user_{uuid.uuid4().hex[:12]}",
         "email": admin_email,
-        "name": "Admin MaliRide",
+        "name": "Admin SIRA TAXI",
         "phone": "+223 00 00 00 00",
         "password": hashed_password,
         "role": "admin",
