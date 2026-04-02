@@ -26,76 +26,54 @@ Application de transport (ride-hailing) comme Uber pour les taxis au Mali avec t
 - **Backend**: FastAPI, Python
 - **Database**: MongoDB (Motor)
 - **Auth**: JWT + Emergent Google OAuth
+- **Maps**: Leaflet + OpenStreetMap + Nominatim API
 
 ## What's Been Implemented (All DONE)
 1. Full-stack scaffolding (Auth, Users, Rides)
-2. Distinct Driver Profile
+2. Distinct Driver Profile with full dark mode theme
 3. Driver Wallet with earnings tracking
 4. Platform Commission Wallet (Admin)
 5. Rebranding to "SIRA TAXI"
 6. Deployment Guide & Backend Optimizations
-7. Distinct Passenger Profile
+7. Distinct Passenger Profile (light theme)
 8. MOTO-TAXI vehicle option & pricing logic
-9. Logo visibility enhancement - Logo prominent on all pages
+9. Logo visibility enhancement
 10. PWA setup - manifest.json, service-worker.js, icons, favicon, install banner
-11. **Page Contact / À propos** - Formulaire de contact (POST /api/contact), coordonnées (contact@sirataxi.ml), section À propos, liens header + footer
-12. **Bug fix: course bloquée** - Correction fetchActiveRide (stale closure, état incorrect pour rides pending), suppression polling redondant, padding bottom sheet (pb-14) pour boutons visibles sur mobile
-13. **Bug fix: app bloquée après acceptation** - Boucle infinie dans driver Dashboard useEffect (activeRide dans deps), corrigé avec useRef pattern. Flux complet vérifié: pending → accepted → arrived → in_progress → completed
-14. **Notifications sonores** - Cloche notification chauffeur (badge + son + dropdown courses disponibles + bouton ACCEPTER), Cloche notification passager (alertes statut : chauffeur trouvé, arrivé, en cours, terminé)
-15. **Onglet Paiements Admin** - Gestion paiements chauffeurs : table portefeuilles, cards résumé (total à payer/versé), modal de paiement, historique des paiements. Endpoints: GET /api/admin/drivers/wallets, POST /api/admin/drivers/{id}/pay, GET /api/admin/payments/history
-16. **GPS & Carte OpenStreetMap** - Remplacement des cartes statiques par de vraies cartes interactives Leaflet/OpenStreetMap. Géolocalisation native du navigateur (watchPosition). Marqueurs colorés: vert=pickup, rouge=dropoff, bleu=passager, jaune=chauffeur. Position envoyée au backend via PUT /api/users/location. Carte centrée sur Bamako par défaut.
-17. **Pages de connexion distinctes** - Écran de choix initial "JE SUIS PASSAGER" / "JE SUIS CHAUFFEUR". Formulaire passager: fond blanc, badge "ESPACE PASSAGER", Google Login. Formulaire chauffeur: fond noir, bordure dorée, badge "ESPACE CHAUFFEUR", sans Google Login. Bouton "Changer de mode" pour revenir au choix.
-18. **Modification mot de passe** - Section collapsible dans les profils passager et chauffeur. Champs: mot de passe actuel, nouveau, confirmation. Toggle visibilité (icône oeil). Validation frontend + backend (6 chars min, vérification mot de passe actuel). Endpoint PUT /api/users/password.
-19. **Sonnerie notification courses** - Web Audio API (ondes carrées, très fort et perçant) pour chauffeurs quand une course arrive, répétition toutes les 3s. Vibration mobile (navigator.vibrate). Browser Notification API. Son initialisé au clic "EN LIGNE" pour contourner le blocage navigateur. Passager: alerte sonore Web Audio API sur changements de statut. Banner jaune pulsant "NOUVELLE COURSE DISPONIBLE !" avec bouton ARRÊTER.
+11. Page Contact / À propos
+12. Bug fix: course bloquée (stale closure, polling fix)
+13. Bug fix: app bloquée après acceptation (infinite loop fix)
+14. Notifications sonores (Web Audio API, loud square wave alerts, vibration)
+15. Onglet Paiements Admin
+16. GPS & Carte OpenStreetMap (Leaflet, react-leaflet, geolocation)
+17. Pages de connexion distinctes (Passager vs Chauffeur)
+18. Modification mot de passe (profils passager et chauffeur)
+19. Sonnerie notification courses (Web Audio API, repeat every 3s, browser notification)
+20. **Barre de recherche de quartiers** - Composant LocationSearch avec recherche Nominatim (OpenStreetMap geocoding), quartiers populaires de Bamako en dropdown, debounce 400ms, résultats en temps réel
+21. **Thème sombre complet Profil Chauffeur** - Toutes les sections (Documents, Activité Récente) converties en dark mode (bg-gray-950, bg-gray-900, bg-gray-800)
+22. **Sélecteur Type de Véhicule (Voiture/Moto)** - Boutons VOITURE/MOTO dans le profil chauffeur et le modal véhicule du dashboard chauffeur. Badge visuel (bleu=voiture, orange=moto)
+23. **Filtrage courses par type de véhicule** - Backend /api/rides/pending filtre les courses par vehicle_category du chauffeur (un chauffeur moto ne voit que les demandes moto)
 
-## Architecture
-```
-/app/
-├── backend/
-│   ├── server.py (FastAPI, all endpoints)
-│   ├── seed_admin.py
-│   ├── .env
-│   └── requirements.txt
-├── frontend/
-│   ├── public/
-│   │   ├── index.html (PWA meta, SW registration, install banner)
-│   │   ├── manifest.json
-│   │   ├── service-worker.js
-│   │   ├── logo192.png
-│   │   ├── logo512.png
-│   │   └── favicon.ico
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── AuthPage.jsx
-│   │   │   ├── admin/ (Dashboard.jsx, PlatformWallet.jsx)
-│   │   │   ├── driver/ (Dashboard.jsx, Profile.jsx, Wallet.jsx)
-│   │   │   └── passenger/ (Dashboard.jsx, Profile.jsx)
-│   │   ├── components/ui/ (Shadcn)
-│   │   ├── App.js
-│   │   └── index.css
-│   ├── package.json
-│   └── .env
-└── memory/ (PRD.md, test_credentials.md)
-```
+## Pricing
+- **Voiture (TAXI)**: 500 FCFA base + 300 FCFA/km
+- **Moto (MOTO-TAXI)**: 200 FCFA base + 150 FCFA/km
+- **Commission plateforme**: 15%
 
 ## Key API Endpoints
-- POST /api/auth/login, POST /api/auth/register, GET /api/auth/me
-- GET /api/rides/estimate, POST /api/rides, GET /api/rides/active
-- GET /api/wallet, GET /api/wallet/transactions
-- GET /api/admin/stats, GET /api/admin/platform-wallet
+- POST /api/auth/register, /api/auth/login, /api/auth/session (Google OAuth)
+- GET /api/auth/me, POST /api/auth/logout
+- PUT /api/users/location, /api/users/status, /api/users/vehicle, /api/users/profile, /api/users/password
+- POST /api/rides/estimate, POST /api/rides
+- GET /api/rides/active, /api/rides/pending (filtered by vehicle_category), /api/rides/history
+- PUT /api/rides/{id}/accept, /api/rides/{id}/status
+- POST /api/chat/{ride_id}, GET /api/chat/{ride_id}
+- POST /api/ratings
+- GET /api/wallet, /api/wallet/transactions, /api/wallet/stats, POST /api/wallet/withdraw
+- GET /api/admin/stats, /api/admin/users, /api/admin/rides, /api/admin/drivers/wallets
+- POST /api/admin/drivers/{id}/pay, GET /api/admin/payments/history
+- POST /api/contact
 
-## Prioritized Backlog
-
-### P0 (Critical)
-- [ ] Driver vehicle type configuration (Voiture/Moto) in profile
-- [ ] Driver filtering/dispatching based on vehicle type
-
-### P1 (Important)
-- [ ] Backend refactoring - Split server.py into routers
-
-### P2 (Future)
-- [ ] Real geolocation APIs (Google Maps) integration
-- [ ] Real-time chat with WebSockets
-- [ ] Push notifications
-- [ ] Payment gateway integration (Orange Money, etc.)
+## Backlog / Future Tasks
+- P1: Refactoring backend server.py (>1400 lignes → routes séparées auth, rides, users, admin)
+- P2: Chat en temps réel (WebSocket) entre passager et chauffeur
+- P2: Notifications push natives (service worker)
+- P3: Intégration paiement mobile (Orange Money, Moov Money)
