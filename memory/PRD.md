@@ -8,19 +8,6 @@ Application de transport (ride-hailing) comme Uber pour les taxis au Mali avec t
 - **Chauffeur**: Accepte des courses, gère son portefeuille, consulte ses gains
 - **Admin**: Gère les utilisateurs, suit les courses, consulte les revenus et commissions de la plateforme
 
-## Core Requirements
-- Auth JWT + Google OAuth
-- 3 rôles distincts (Admin, Chauffeur, Passager)
-- Profils distincts pour chauffeurs et passagers
-- Réservation de courses avec choix du véhicule (TAXI/MOTO)
-- Tarification par zone adaptée au terrain de Bamako
-- Portefeuille chauffeur pour les gains
-- Portefeuille plateforme (admin) avec commission 15%
-- Chat en temps réel entre chauffeur et passager
-- Historique des courses
-- Évaluations/notes
-- Design Neo-Brutalist (noir/jaune #FFBE00)
-
 ## Tech Stack
 - **Frontend**: React, Tailwind CSS, Shadcn UI
 - **Backend**: FastAPI, Python
@@ -40,28 +27,30 @@ Application de transport (ride-hailing) comme Uber pour les taxis au Mali avec t
 - Commission plateforme: 15%
 
 ## What's Been Implemented (All DONE)
-1. Full-stack scaffolding (Auth, Users, Rides)
-2. Distinct Driver Profile with full dark mode theme
-3. Driver Wallet with earnings tracking
-4. Platform Commission Wallet (Admin)
-5. Rebranding to "SIRA TAXI"
-6. Deployment Guide & Backend Optimizations
-7. Distinct Passenger Profile (light theme)
-8. MOTO-TAXI vehicle option & pricing logic
-9. Logo visibility enhancement
-10. PWA setup
-11. Page Contact / À propos
-12. Bug fixes: course bloquée, app bloquée après acceptation
-13. Notifications sonores (HTML5 Audio - fichiers WAV réels, vibration mobile)
-14. Onglet Paiements Admin
-15. GPS & Carte OpenStreetMap (Leaflet, react-leaflet, geolocation)
-16. Pages de connexion distinctes (Passager vs Chauffeur)
-17. Modification mot de passe
-18. Barre de recherche de quartiers (Nominatim + quartiers populaires Bamako)
-19. Sélecteur Type de Véhicule (Voiture/Moto) dans profil chauffeur
-20. Filtrage courses par type de véhicule (backend)
-21. **Tarification par zone** adaptée au terrain de Bamako (pas au km linéaire)
-22. **Notifications audio refaites** avec fichiers WAV réels (HTML5 Audio) au lieu de Web Audio API synthétique
+1. Full-stack scaffolding (Auth, Users, Rides, Admin)
+2. MOTO-TAXI vehicle option & zone-based pricing logic
+3. PWA setup with icons and service worker
+4. Page Contact / À propos
+5. Bug fixes: course bloquée, app bloquée, infinite loops
+6. Notifications sonores (HTML5 Audio WAV, vibration mobile)
+7. Onglet Paiements Admin
+8. GPS & Carte OpenStreetMap (Leaflet, react-leaflet, geolocation)
+9. Pages de connexion distinctes (Passager vs Chauffeur)
+10. Modification mot de passe
+11. Barre de recherche de quartiers (Nominatim + quartiers populaires Bamako)
+12. Sélecteur Type de Véhicule (Voiture/Moto) + filtrage backend
+13. Tarification par zone adaptée au terrain de Bamako
+14. Profil Chauffeur en thème sombre (dark mode complet)
+15. Profil Passager en thème clair
+16. **REFONTE COMPLÈTE Dashboard Chauffeur style Uber Driver** :
+    - Navigation en bas avec 4 onglets (Accueil, Revenus, Messages, Menu)
+    - Accueil: titre statut + carte GPS + "Passez en ligne" + courses en attente
+    - Revenus: carte solde noir + stats (Aujourd'hui/Semaine/Mois/Courses) + historique transactions + retrait
+    - Messages: notifications courses + activité récente
+    - Menu: profil (photo/nom/note), actions rapides (Aide/Sécurité/Paramètres), sections Gérer/Argent/Ressources, déconnexion
+    - Modal véhicule avec sélecteur Voiture/Moto
+    - Chat intégré pendant course active
+    - Gestion complète des courses (Accepter → Arrivé → Démarrer → Terminer)
 
 ## Backlog / Future Tasks
 - P1: Refactoring backend server.py (>1400 lignes → routes séparées)
