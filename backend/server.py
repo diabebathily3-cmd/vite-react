@@ -187,17 +187,40 @@ async def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Token invalide")
 
 def calculate_price(distance_km: float, vehicle_type: str = "car") -> float:
-    """Calculate ride price based on distance and vehicle type - Mali pricing"""
+    """Calculate ride price based on distance and vehicle type - Bamako zone pricing
+    
+    Pricing is distance-based within zones, matching real Bamako taxi fares:
+    - Very short (< 2km, same quartier): 500 FCFA car / 250 FCFA moto
+    - Short (2-4km, same commune): 1000 FCFA car / 500 FCFA moto
+    - Medium (4-7km, between communes): 1500 FCFA car / 750 FCFA moto
+    - Long (7-12km, across Bamako): 2000 FCFA car / 1000 FCFA moto
+    - Very long (>12km, Kati/Aéroport): 2500+ FCFA car / 1500+ FCFA moto
+    """
     if vehicle_type == "moto":
-        # Moto-taxi pricing (cheaper)
-        base_fare = 200  # 200 FCFA base
-        per_km = 150  # 150 FCFA per km
+        if distance_km < 2:
+            return 250
+        elif distance_km < 4:
+            return 500
+        elif distance_km < 7:
+            return 750
+        elif distance_km < 12:
+            return 1000
+        else:
+            # Long distance: 1500 base + 100 FCFA per extra km beyond 12
+            return round(1500 + max(0, distance_km - 12) * 100, 0)
     else:
         # Car taxi pricing
-        base_fare = 500  # 500 FCFA base
-        per_km = 300  # 300 FCFA per km
-    
-    return round(base_fare + (distance_km * per_km), 0)
+        if distance_km < 2:
+            return 500
+        elif distance_km < 4:
+            return 1000
+        elif distance_km < 7:
+            return 1500
+        elif distance_km < 12:
+            return 2000
+        else:
+            # Long distance: 2500 base + 200 FCFA per extra km beyond 12
+            return round(2500 + max(0, distance_km - 12) * 200, 0)
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate distance between two points using Haversine formula"""

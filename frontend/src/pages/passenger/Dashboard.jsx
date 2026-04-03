@@ -136,55 +136,53 @@ const PassengerDashboard = () => {
   // Notification state
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const audioCtxRef = useRef(null);
+  const passengerAudioRef = useRef(null);
   
   // GPS state
   const [myLocation, setMyLocation] = useState(null);
 
-  // Initialize AudioContext on first user interaction
+  // Pre-load passenger notification audio
   useEffect(() => {
-    const initOnInteraction = () => {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    const audio = new Audio("/passenger_alert.wav");
+    audio.preload = "auto";
+    audio.volume = 1.0;
+    passengerAudioRef.current = audio;
+
+    // Unlock audio on first interaction (mobile requirement)
+    const unlock = () => {
+      if (passengerAudioRef.current) {
+        passengerAudioRef.current.play().then(() => {
+          passengerAudioRef.current.pause();
+          passengerAudioRef.current.currentTime = 0;
+        }).catch(() => {});
       }
-      if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume();
     };
-    document.addEventListener("click", initOnInteraction, { once: true });
-    document.addEventListener("touchstart", initOnInteraction, { once: true });
+    document.addEventListener("click", unlock, { once: true });
+    document.addEventListener("touchstart", unlock, { once: true });
+
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
     return () => {
-      document.removeEventListener("click", initOnInteraction);
-      document.removeEventListener("touchstart", initOnInteraction);
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("touchstart", unlock);
     };
   }, []);
 
   const playPassengerAlert = () => {
     try {
-      const ctx = audioCtxRef.current;
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      const gain = ctx.createGain();
-      gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(0.7, now);
-
-      const notes = [784, 1047, 1175];
-      const durs = [0.2, 0.25, 0.3];
-      let t = now;
-      notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.connect(g);
-        g.connect(gain);
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, t);
-        g.gain.setValueAtTime(0.7, t);
-        g.gain.exponentialRampToValueAtTime(0.01, t + durs[i]);
-        osc.start(t);
-        osc.stop(t + durs[i]);
-        t += durs[i] + 0.08;
-      });
+      if (passengerAudioRef.current) {
+        passengerAudioRef.current.currentTime = 0;
+        passengerAudioRef.current.volume = 1.0;
+        passengerAudioRef.current.play().catch(() => {
+          // Fallback
+          try {
+            const fb = new Audio("/passenger_alert.wav");
+            fb.volume = 1.0;
+            fb.play().catch(() => {});
+          } catch (e) {}
+        });
+      }
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     } catch (e) {}
   };
@@ -520,7 +518,7 @@ const PassengerDashboard = () => {
                     <Car className="w-10 h-10" />
                     <span className="font-bold text-lg">TAXI</span>
                     <span className="text-xs text-gray-600">Voiture confortable</span>
-                    <span className="text-sm font-bold mt-1">500 + 300/km</span>
+                    <span className="text-sm font-bold mt-1">500 - 2500 FCFA</span>
                   </button>
                   <button
                     type="button"
@@ -538,7 +536,7 @@ const PassengerDashboard = () => {
                     <Bike className="w-10 h-10" />
                     <span className="font-bold text-lg">MOTO</span>
                     <span className="text-xs text-gray-600">Rapide & économique</span>
-                    <span className="text-sm font-bold mt-1">200 + 150/km</span>
+                    <span className="text-sm font-bold mt-1">250 - 1500 FCFA</span>
                   </button>
                 </div>
               </div>

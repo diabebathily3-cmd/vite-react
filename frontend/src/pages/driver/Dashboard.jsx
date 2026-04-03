@@ -135,7 +135,8 @@ const DriverDashboard = () => {
   const [ringing, setRinging] = useState(false);
   const prevPendingCountRef = useRef(0);
   const ringIntervalRef = useRef(null);
-  const audioCtxRef = useRef(null);
+  const audioRef = useRef(null);
+  const audioUnlockedRef = useRef(false);
 
   // GPS state
   const [myLocation, setMyLocation] = useState(null);
@@ -145,67 +146,59 @@ const DriverDashboard = () => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
+    // Pre-load the audio element
+    const audio = new Audio("/ride_alert.wav");
+    audio.preload = "auto";
+    audio.loop = false;
+    audioRef.current = audio;
+
     return () => {
       if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 
-  // Initialize AudioContext on user interaction (required by browsers)
+  // Unlock audio on first user interaction (required by mobile browsers)
   const initAudio = () => {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtxRef.current.state === "suspended") {
-      audioCtxRef.current.resume();
+    if (audioRef.current && !audioUnlockedRef.current) {
+      // Play and immediately pause to unlock audio on mobile
+      audioRef.current.volume = 1.0;
+      const playPromise = audioRef.current.play();
+      if (playPromise) {
+        playPromise.then(() => {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioUnlockedRef.current = true;
+          console.log("Audio unlocked successfully");
+        }).catch((e) => {
+          console.log("Audio unlock failed:", e);
+        });
+      }
     }
   };
 
-  // Play loud alert using Web Audio API (works on mobile)
+  // Play the real audio file - LOUD and reliable on mobile
   const playAlertSound = () => {
     try {
-      const ctx = audioCtxRef.current;
-      if (!ctx) return;
-
-      const now = ctx.currentTime;
-      const gain = ctx.createGain();
-      gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(0.9, now);
-
-      // 3 ascending tones - LOUD
-      const freqs = [880, 1100, 1320];
-      const durations = [0.18, 0.18, 0.3];
-      let t = now;
-
-      freqs.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const oscGain = ctx.createGain();
-        osc.connect(oscGain);
-        oscGain.connect(gain);
-        osc.type = "square"; // Square wave = louder + more piercing
-        osc.frequency.setValueAtTime(freq, t);
-        oscGain.gain.setValueAtTime(0.8, t);
-        oscGain.gain.exponentialRampToValueAtTime(0.01, t + durations[i]);
-        osc.start(t);
-        osc.stop(t + durations[i]);
-        t += durations[i] + 0.06;
-      });
-
-      // Second repeat higher
-      const freqs2 = [1100, 1320, 1568];
-      freqs2.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const oscGain = ctx.createGain();
-        osc.connect(oscGain);
-        oscGain.connect(gain);
-        osc.type = "square";
-        osc.frequency.setValueAtTime(freq, t);
-        oscGain.gain.setValueAtTime(0.9, t);
-        oscGain.gain.exponentialRampToValueAtTime(0.01, t + durations[i]);
-        osc.start(t);
-        osc.stop(t + durations[i]);
-        t += durations[i] + 0.06;
-      });
-
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.volume = 1.0;
+        const playPromise = audioRef.current.play();
+        if (playPromise) {
+          playPromise.catch((e) => {
+            console.log("Play failed, trying new Audio:", e);
+            // Fallback: create a new Audio instance
+            try {
+              const fallback = new Audio("/ride_alert.wav");
+              fallback.volume = 1.0;
+              fallback.play().catch(() => {});
+            } catch (e2) {}
+          });
+        }
+      }
       // Vibrate phone
       if (navigator.vibrate) {
         navigator.vibrate([300, 100, 300, 100, 500]);
