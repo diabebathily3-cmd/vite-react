@@ -8,7 +8,7 @@ import {
   LayoutDashboard, PackageSearch, ClipboardList, Mail, LogOut,
   Edit, Check, AlertCircle, TrendingUp, Users, Star, Filter,
   RefreshCw, Smartphone, Banknote, CreditCard, Wallet, Bell, Volume2,
-  Store, Receipt
+  Store, Receipt, Upload, Image
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -1554,6 +1554,10 @@ const AdminDashboard = () => {
   const [posDailySummary, setPosDailySummary] = useState(null);
   const [posLoading, setPosLoading] = useState(false);
   
+  // Image upload state
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
+  
   const [newProduct, setNewProduct] = useState({
     name: '',
     name_bambara: '',
@@ -1567,6 +1571,31 @@ const AdminDashboard = () => {
     is_available: true,
     is_promotion: false
   });
+
+  // Upload image function
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const res = await axios.post(`${API}/upload/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setNewProduct({...newProduct, image_url: res.data.url});
+        alert('✅ Image téléchargée avec succès !');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erreur lors du téléchargement de l\'image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   // Admin credentials (in production, use environment variables)
   const ADMIN_USERNAME = 'admin';
@@ -2408,14 +2437,66 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">URL de l'image</label>
-                      <input 
-                        type="url"
-                        value={newProduct.image_url}
-                        onChange={(e) => setNewProduct({...newProduct, image_url: e.target.value})}
-                        placeholder="https://..."
-                        className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none"
-                      />
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Image du produit</label>
+                      
+                      {/* Image Preview */}
+                      {newProduct.image_url && (
+                        <div className="mb-3 relative inline-block">
+                          <img 
+                            src={newProduct.image_url.startsWith('/api') ? `${API.replace('/api', '')}${newProduct.image_url}` : newProduct.image_url} 
+                            alt="Preview" 
+                            className="w-24 h-24 object-cover rounded-xl border-2 border-stone-200"
+                          />
+                          <button 
+                            type="button"
+                            onClick={() => setNewProduct({...newProduct, image_url: ''})}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Upload Button */}
+                      <div className="flex gap-2">
+                        <input 
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingImage}
+                          className="flex-1 py-3 px-4 border-2 border-dashed border-stone-300 rounded-xl hover:border-[#14B53A] hover:bg-green-50 transition-all flex items-center justify-center gap-2 text-stone-600"
+                        >
+                          {uploadingImage ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"></div>
+                              Téléchargement...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-5 h-5" />
+                              Télécharger une image
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      
+                      {/* Or URL input */}
+                      <div className="mt-2">
+                        <p className="text-xs text-stone-400 mb-1">Ou entrez une URL :</p>
+                        <input 
+                          type="url"
+                          value={newProduct.image_url}
+                          onChange={(e) => setNewProduct({...newProduct, image_url: e.target.value})}
+                          placeholder="https://..."
+                          className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-[#14B53A] outline-none text-sm"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>

@@ -1,6 +1,8 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Query, UploadFile, File
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -13,8 +15,11 @@ from enum import Enum
 import hashlib
 import hmac
 import time
+import shutil
 
 ROOT_DIR = Path(__file__).parent
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
@@ -679,6 +684,43 @@ async def get_daily_summary():
         "total_cfa": total_cfa,
         "sales": sales
     }
+
+# ===================== IMAGE UPLOAD =====================
+
+@api_router.post("/upload/image")
+async def upload_image(file: UploadFile = File(...)):
+    """Upload a product image"""
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Type de fichier non supporté. Utilisez JPEG, PNG, WebP ou GIF.")
+    
+    # Generate unique filename
+    file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    unique_filename = f"{uuid.uuid4()}.{file_ext}"
+    file_path = UPLOAD_DIR / unique_filename
+    
+    # Save file
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'upload: {str(e)}")
+    
+    # Return URL
+    return {
+        "success": True,
+        "filename": unique_filename,
+        "url": f"/api/uploads/{unique_filename}"
+    }
+
+@api_router.get("/uploads/{filename}")
+async def get_uploaded_image(filename: str):
+    """Serve uploaded images"""
+    file_path = UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Image non trouvée")
+    return FileResponse(file_path)
 
 # ===================== SEED DATA =====================
 
