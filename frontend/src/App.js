@@ -2496,9 +2496,34 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-4 py-4 text-stone-600">{product.category}</td>
                         <td className="px-4 py-4">
-                          <span className="price-euro">{product.price_euro}€</span>
-                          <span className="text-stone-400 mx-1">/</span>
-                          <span className="price-cfa text-sm">{product.price_cfa.toLocaleString()}F</span>
+                          {editingProduct === product.id ? (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1">
+                                <input 
+                                  type="number"
+                                  defaultValue={product.price_euro}
+                                  className="w-16 px-2 py-1 border rounded text-sm"
+                                  onBlur={(e) => updateProduct(product.id, { price_euro: parseFloat(e.target.value) })}
+                                />
+                                <span className="text-stone-400">€</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <input 
+                                  type="number"
+                                  defaultValue={product.price_cfa}
+                                  className="w-20 px-2 py-1 border rounded text-sm"
+                                  onBlur={(e) => updateProduct(product.id, { price_cfa: parseInt(e.target.value) })}
+                                />
+                                <span className="text-stone-400">F</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="price-euro">{product.price_euro}€</span>
+                              <span className="text-stone-400 mx-1">/</span>
+                              <span className="price-cfa text-sm">{product.price_cfa?.toLocaleString()}F</span>
+                            </>
+                          )}
                         </td>
                         <td className="px-4 py-4">
                           {editingProduct === product.id ? (
@@ -2536,7 +2561,7 @@ const AdminDashboard = () => {
                               onClick={() => setEditingProduct(editingProduct === product.id ? null : product.id)}
                               data-testid={`edit-product-${product.id}`}
                               className="p-2 hover:bg-stone-100 rounded-lg text-stone-600"
-                              title="Modifier le stock"
+                              title="Modifier prix et stock"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
