@@ -652,13 +652,15 @@ async def get_pending_rides(user: dict = Depends(get_current_user)):
     
     # Get driver's vehicle category
     vehicle_info = user.get("vehicle_info") or {}
-    driver_vehicle_category = vehicle_info.get("vehicle_category", "car")
+    driver_vehicle_category = vehicle_info.get("vehicle_category")
     
-    # Filter rides by vehicle type matching driver's category
-    rides = await db.rides.find(
-        {"status": "pending", "vehicle_type": driver_vehicle_category}, 
-        {"_id": 0}
-    ).sort("created_at", -1).to_list(20)
+    # Build query - if driver has set vehicle_category, filter by it
+    # If not set, show ALL pending rides so driver can accept any
+    query = {"status": "pending"}
+    if driver_vehicle_category:
+        query["vehicle_type"] = driver_vehicle_category
+    
+    rides = await db.rides.find(query, {"_id": 0}).sort("created_at", -1).to_list(20)
     
     # Batch fetch all passengers (optimized - single query)
     passenger_ids = [r["passenger_id"] for r in rides]
